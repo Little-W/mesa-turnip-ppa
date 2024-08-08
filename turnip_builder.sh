@@ -6,16 +6,14 @@ nocolor='\033[0m'
 deps="meson ninja patchelf unzip curl pip flex bison zip git"
 workdir="$(pwd)/turnip_workdir"
 packagedir="$workdir/turnip_module"
-ndkver="android-ndk-r26c"
-sdkver="31"
 mesasrc="https://gitlab.freedesktop.org/mesa/mesa.git"
 
 #array of string => commit/branch;patch args
 patches=(
-	#"fix-for-anon-file;../../turnip-patches/fix-for-anon-file.patch;"
-	#"fix-for-getprogname;../../turnip-patches/fix-for-getprogname.patch;"
-	#"zink_fixes;../../turnip-patches/zink_fixes.patch;"
-	#"dri3;../../turnip-patches/dri3.patch;"
+	"fix-for-anon-file;../../turnip-patches/fix-for-anon-file.patch;"
+	"fix-for-getprogname;../../turnip-patches/fix-for-getprogname.patch;"
+	"zink_fixes;../../turnip-patches/zink_fixes.patch;"
+	"dri3;../../turnip-patches/dri3.patch;"
 	#"descr-prefetching-optimization-a7xx;merge_requests/29873;"
 	#"make-gmem-work-with-preemption;merge_requests/29871;"
 	#"VK_EXT_fragment_density_map;merge_requests/29938;"
@@ -26,30 +24,30 @@ mesa_version=""
 vulkan_version=""
 clear
 
-# there are 4 functions here, simply comment to disable.
-# you can insert your own function and make a pull request.
 run_all(){
 	check_deps
-	prepare_workdir
-	build_lib_for_android
-	port_lib_for_adrenotool
+	prepare_source
+	build_lib "aarch64"
+	build_lib "arm"
 
 	if (( ${#patches[@]} )); then
-		prepare_workdir "patched"
-		build_lib_for_android
-		port_lib_for_adrenotool "patched"
+		prepare_source "patched"
+		build_lib "aarch64"
+		build_lib "arm"
+		port_lib "patched" "aarch64"
+		port_lib "patched" "arm"
 	fi
 }
 
 check_deps(){
-	echo "Checking system for required Dependencies ..."
+	echo "Checking system for required dependencies ..."
 	for deps_chk in $deps;
 	do
 		sleep 0.25
 		if command -v "$deps_chk" >/dev/null 2>&1 ; then
 			echo -e "$green - $deps_chk found $nocolor"
 		else
-			echo -e "$red - $deps_chk not found, can't countinue. $nocolor"
+			echo -e "$red - $deps_chk not found, can't continue. $nocolor"
 			deps_missing=1
 		fi;
 	done
@@ -57,24 +55,11 @@ check_deps(){
 	if [ "$deps_missing" == "1" ]
 		then echo "Please install missing dependencies" && exit 1
 	fi
-
 }
 
-prepare_workdir(){
+prepare_source(){
 	echo "Creating and entering to work directory ..." $'\n'
 	mkdir -p "$workdir" && cd "$_"
-
-	if [ -z "${ANDROID_NDK_LATEST_HOME}" ]; then
-		if [ ! -n "$(ls -d android-ndk*)" ]; then
-			echo "Downloading android-ndk from google server (~640 MB) ..." $'\n'
-			curl https://dl.google.com/android/repository/"$ndkver"-linux.zip --output "$ndkver"-linux.zip &> /dev/null
-			###
-			echo "Exracting android-ndk to a folder ..." $'\n'
-			unzip "$ndkver"-linux.zip  &> /dev/null
-		fi
-	else	
-		echo "Using android ndk from github image"
-	fi
 
 	if [ -z "$1" ]; then
 		if [ -d mesa ]; then
@@ -118,82 +103,96 @@ prepare_workdir(){
 	fi
 }
 
-build_lib_for_android(){
-	echo "Creating meson cross file ..." $'\n'
-	if [ -z "${ANDROID_NDK_LATEST_HOME}" ]; then
-		ndk="$workdir/$ndkver/toolchains/llvm/prebuilt/linux-x86_64/bin"
-	else	
-		ndk="$ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin"
-	fi
+build_lib(){
+	target="$1"
+	echo "Creating meson cross file for $target ..." $'\n'
 
-	cat <<EOF >"android-aarch64"
+	case $target in
+		"aarch64")
+			cat <<EOF >"$workdir"/"$target"-crossfile
 [binaries]
-ar = '$ndk/llvm-ar'
-c = ['ccache', '$ndk/aarch64-linux-android$sdkver-clang']
-cpp = ['ccache', '$ndk/aarch64-linux-android$sdkver-clang++', '-fno-exceptions', '-fno-unwind-tables', '-fno-asynchronous-unwind-tables', '-static-libstdc++']
-c_ld = 'lld'
-cpp_ld = 'lld'
-strip = '$ndk/aarch64-linux-android-strip'
-pkgconfig = ['env', 'PKG_CONFIG_LIBDIR=NDKDIR/pkgconfig', '/usr/bin/pkg-config']
+c = 'aarch64-linux-gnu-gcc'
+cpp = 'aarch64-linux-gnu-g++'
+ar = 'aarch64-linux-gnu-ar'
+strip = 'aarch64-linux-gnu-strip'
+pkgconfig = 'aarch64-linux-gnu-pkg-config'
 [host_machine]
-system = 'android'
+system = 'linux'
 cpu_family = 'aarch64'
-cpu = 'armv8'
+cpu = 'aarch64'
 endian = 'little'
 EOF
+			;;
+		"arm")
+			cat <<EOF >"$workdir"/"$target"-crossfile
+[binaries]
+c = 'arm-linux-gnueabihf-gcc'
+cpp = 'arm-linux-gnueabihf-g++'
+ar = 'arm-linux-gnueabihf-ar'
+strip = 'arm-linux-gnueabihf-strip'
+pkgconfig = 'arm-linux-gnueabihf-pkg-config'
+[host_machine]
+system = 'linux'
+cpu_family = 'arm'
+cpu = 'arm'
+endian = 'little'
+EOF
+			;;
+		*)
+			echo "Unknown target $target"
+			exit 1
+			;;
+	esac
 
-	echo "Generating build files ..." $'\n'
-	meson build-android-aarch64 --cross-file "$workdir"/mesa/android-aarch64 -Dbuildtype=release -Dplatforms=android -Dplatform-sdk-version=$sdkver -Dandroid-stub=true -Dgallium-drivers= -Dvulkan-drivers=freedreno -Dvulkan-beta=true -Dfreedreno-kmds=kgsl -Db_lto=true &> "$workdir"/meson_log
+	echo "Generating build files for $target..." $'\n'
+	meson build-"$target" --cross-file "$workdir"/"$target"-crossfile -Dbuildtype=release -Dplatforms=linux -Dgallium-drivers= -Dvulkan-drivers=freedreno -Dvulkan-beta=true -Dfreedreno-kmds=kgsl -Db_lto=true &> "$workdir"/meson_log
+	if [ $? -ne 0 ]; then
+		echo -e "$red Meson build generation failed for $target! $nocolor" && exit 1
+	fi
 
-	echo "Compiling build files ..." $'\n'
-	ninja -C build-android-aarch64 &> "$workdir"/ninja_log
+	echo "Compiling build files for $target..." $'\n'
+	ninja -C build-"$target" &> "$workdir"/ninja_log
+	if [ $? -ne 0 ]; then
+		echo -e "$red Ninja build failed for $target! $nocolor" && exit 1
+	fi
 }
 
-port_lib_for_adrenotool(){
-	echo "Using patchelf to match soname ..."  $'\n'
-	cp "$workdir"/mesa/build-android-aarch64/src/freedreno/vulkan/libvulkan_freedreno.so "$workdir"
+port_lib(){
+	target="$2"
+	echo "Using patchelf to match soname for $target..."  $'\n'
+	if [ ! -f "$workdir/mesa/build-$target/src/freedreno/vulkan/libvulkan_freedreno.so" ]; then
+		echo -e "$red File libvulkan_freedreno.so not found for $target! $nocolor" && exit 1
+	fi
+	cp "$workdir"/mesa/build-"$target"/src/freedreno/vulkan/libvulkan_freedreno.so "$workdir"
 	cd "$workdir"
 	patchelf --set-soname vulkan.adreno.so libvulkan_freedreno.so
-	mv libvulkan_freedreno.so vulkan.ad07XX.so
+	if [ $? -ne 0 ]; then
+		echo -e "$red Patchelf failed for $target! $nocolor" && exit 1
+	fi
 
-	if ! [ -a vulkan.ad07XX.so ]; then
+	if [ "$target" == "aarch64" ]; then
+		mv libvulkan_freedreno.so aarch64_libvulkan_freedreno.so
+	elif [ "$target" == "arm" ]; then
+		mv libvulkan_freedreno.so arm_libvulkan_freedreno.so
+	fi
+
+	if ! [ -a "${target}_libvulkan_freedreno.so" ]; then
 		echo -e "$red Build failed! $nocolor" && exit 1
 	fi
 
 	mkdir -p "$packagedir" && cd "$_"
 
-	date=$(date +'%b %d, %Y')
-	suffix=""
-
-	if [ ! -z "$1" ]; then
-		suffix="_$1"
-	fi
-
-	cat <<EOF >"meta.json"
-{
-  "schemaVersion": 1,
-  "name": "Turnip - $date - $commit_short$suffix",
-  "description": "Compiled from Mesa, Commit $commit_short$suffix",
-  "author": "mesa",
-  "packageVersion": "1",
-  "vendor": "Mesa",
-  "driverVersion": "$mesa_version/vk$vulkan_version",
-  "minApi": 27,
-  "libraryName": "vulkan.ad07XX.so"
-}
-EOF
-
 	filename=turnip_"$(date +'%b-%d-%Y')"_"$commit_short"
-	echo "Copy necessary files from work directory ..." $'\n'
-	cp "$workdir"/vulkan.ad07XX.so "$packagedir"
+	echo "Copy necessary files from work directory for $target..." $'\n'
+	cp "$workdir"/"${target}_libvulkan_freedreno.so" "$packagedir"
 
-	echo "Packing files in to adrenotool package ..." $'\n'
+	echo "Packing files into package for $target..." $'\n'
 	zip -9 "$workdir"/"$filename$suffix".zip ./*
 
 	cd "$workdir"
 
 	if [ -z "$1" ]; then
-		echo "Turnip - $mesa_version - $date" > release
+		echo "Turnip - $mesa_version - $(date +'%b %d, %Y')" > release
 		echo "$mesa_version"_"$commit_short" > tag
 		echo  $filename > filename
 		echo "### Base commit : [$commit_short](https://gitlab.freedesktop.org/mesa/mesa/-/commit/$commit_short)" > description
@@ -220,9 +219,10 @@ EOF
 		fi
 	fi
 	
-	if ! [ -a "$workdir"/"$filename".zip ];
-		then echo -e "$red-Packing failed!$nocolor" && exit 1
-		else echo -e "$green-All done, you can take your zip from this folder;$nocolor" && echo "$workdir"/
+	if ! [ -a "$workdir"/"$filename".zip ]; then
+		echo -e "$red-Packing failed!$nocolor" && exit 1
+	else
+		echo -e "$green-All done, you can take your zip from this folder;$nocolor" && echo "$workdir"/
 	fi
 }
 
