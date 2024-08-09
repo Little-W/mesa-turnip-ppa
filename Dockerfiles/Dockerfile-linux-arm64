@@ -1,0 +1,20 @@
+FROM arm64v8/ubuntu:24.04 As dev-image
+WORKDIR /root
+# 为了能apt build-dep需要添加deb-src。不确定security添加了src会不会有问题，但也不知道怎么排除。
+RUN sed -i 's/Types: deb/Types:deb deb-src/g' /etc/apt/sources.list.d/ubuntu.sources \
+&& dpkg --add-architecture armhf \
+&& apt update \
+&& apt install -y cbindgen python3-certifi python3-pycparser
+
+# mesa源码
+COPY mesa mesa
+COPY turnip-patches turnip-patches
+COPY files/cross.txt mesa/cross.txt
+COPY build_mesa.sh mesa/build_mesa.sh
+# 配置构建目录。手动复制drm头文件
+RUN cd mesa \
+&& bash build_mesa.sh
+
+# 导出编译后的文件
+FROM scratch AS out-image
+COPY --from=dev-image /root/build_out /root/build_out

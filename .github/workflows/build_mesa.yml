@@ -1,0 +1,41 @@
+name: 构建mesa
+
+on:
+  workflow_dispatch:
+    inputs:
+      mesa-version:
+        description: |
+          e.g. mesa-24.1.1  
+          https://gitlab.freedesktop.org/mesa/mesa/-/tags
+        required: true
+        default: 'main'
+        type: string
+
+jobs:
+  linux-arm64:
+    runs-on: ubuntu-24.04
+    steps:
+    
+    - name: 克隆仓库
+      uses: actions/checkout@v4
+        
+    - name: 重命名Dockerfile
+      run: mv Dockerfiles/Dockerfile-linux-arm64 Dockerfile
+      
+    - name: 下载mesa源码
+      run: |
+        wget https://gitlab.freedesktop.org/mesa/mesa/-/archive/${{ inputs.mesa-version }}/mesa-${{ inputs.mesa-version }}.tar.gz
+        tar xf mesa-${{ inputs.mesa-version }}.tar.gz
+        mv mesa-${{ inputs.mesa-version }} mesa
+        
+    - name: 使用action设置docker qemu #（不需要自己手动放qemu了）
+      uses: docker/setup-qemu-action@v3
+      
+    - name: docker开始构建
+      run: docker build --output type=tar,dest=mesa-build.tar --target=out-image .
+        
+    - name: 上传artifact
+      uses: actions/upload-artifact@v4.3.3
+      with:
+        name: turnip-linux-arm64-${{ inputs.mesa-version }}
+        path: mesa-build.tar
