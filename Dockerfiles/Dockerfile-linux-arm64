@@ -2,6 +2,7 @@ FROM arm64v8/ubuntu:24.04 As dev-image
 WORKDIR /root
 # 为了能apt build-dep需要添加deb-src。不确定security添加了src会不会有问题，但也不知道怎么排除。
 RUN sed -i 's/Types: deb/Types:deb deb-src/g' /etc/apt/sources.list.d/ubuntu.sources \
+&& sed -i 's/ports.ubuntu.com/us-east-1.ec2.ports.ubuntu.com/' /etc/apt/sources.list.d/ubuntu.sources  \
 && dpkg --add-architecture armhf \
 && apt update \
 && apt install -y cbindgen python3-certifi python3-pycparser
