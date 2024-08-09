@@ -1,0 +1,57 @@
+name: 构建mesa
+
+on:
+  workflow_dispatch:
+    inputs:
+      mesa-version:
+        description: |
+          e.g. mesa-24.1.1  
+          https://gitlab.freedesktop.org/mesa/mesa.git
+        required: true
+        default: 'main'
+        type: string
+  schedule:
+  - cron: '30 2 * * *'
+  push:
+    branches:
+      - main
+
+jobs:
+  linux-arm64:
+    runs-on: ubuntu-24.04
+    steps:
+    
+    - name: Set Swap Space
+      uses: pierotofy/set-swap-space@master
+      with:
+        swap-size-gb: 10
+        
+    - name: 克隆仓库
+      uses: actions/checkout@v4
+        
+    - name: 重命名Dockerfile
+      run: mv Dockerfiles/Dockerfile-linux-arm64 Dockerfile
+      
+    - name: 设置版本号
+      run: echo "MESA_VERSION=${{ github.event.inputs.mesa-version || 'main' }}" >> $GITHUB_ENV
+
+    - name: 下载mesa源码
+      run: |
+        git clone https://gitlab.freedesktop.org/mesa/mesa.git -b ${{ env.MESA_VERSION }} --depth 1
+        
+    - name: 使用action设置docker qemu
+      uses: docker/setup-qemu-action@v3
+      
+    - name: 构建并提取输出文件
+      run: |
+        docker build -t mesa-build:latest .
+        CONTAINER_ID=$(docker create mesa-build:latest)
+        mkdir -p /home/runner/work/mesa-build/upload
+        docker cp $CONTAINER_ID:/root/upload/. /home/runner/work/mesa-build/upload
+        docker rm $CONTAINER_ID
+        
+    - name: 上传artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: turnip-linux-arm64-${{ env.MESA_VERSION }}
+        path: /home/runner/work/mesa-build/upload/
