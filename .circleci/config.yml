@@ -13,6 +13,7 @@ jobs:
       - checkout
       - run: bash setup_env.sh
       - run: bash build_mesa.sh
+      - run: bash box86.sh
       - store_artifacts:
           path: ~/upload
 
