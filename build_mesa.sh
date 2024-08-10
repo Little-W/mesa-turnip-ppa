@@ -21,14 +21,14 @@ patch -p1 < ../turnip-patches/dri3.patch
 
 #编译64位turnip+zink+解码库+镓九
 
-CC=clang CXX=clang++ meson b -Dgallium-drivers=virgl,zink,llvmpipe,d3d12 -Dvulkan-drivers=freedreno,swrast -Dglx=dri -Dplatforms=x11,wayland -Dbuildtype=release -Dllvm=enabled -Dxlib-lease=enabled -Dgles2=enabled -Dgallium-nine=true -Dgallium-opencl=icd -Degl=enabled -Dfreedreno-kmds=kgsl,msm -Ddri3=enabled  -Dvulkan-beta=true -Dvideo-codecs=vc1dec,h264dec,h264enc,h265dec,h265enc -Dglx-direct=true -Dtools=drm-shim,freedreno -Dgallium-vdpau=enabled -Dopengl=true -Dosmesa=true -Dpower8=enabled -Degl-native-platform=drm -Db_lto=true -Dc_args="-Wno-typedef-redefinition -flto -O3"
+CC=clang CXX=clang++ meson b -Dgallium-drivers=virgl,zink,llvmpipe,d3d12 -Dvulkan-drivers=freedreno,swrast -Dglx=dri -Dplatforms=x11,wayland -Dbuildtype=release -Dllvm=enabled -Dxlib-lease=enabled -Dgles2=enabled -Dgallium-nine=true -Dgallium-opencl=icd -Degl=enabled -Dfreedreno-kmds=kgsl,msm -Ddri3=enabled  -Dvulkan-beta=true -Dvideo-codecs=vc1dec,h264dec,h264enc,h265dec,h265enc -Dglx-direct=true -Dtools=drm-shim,freedreno -Dgallium-vdpau=enabled -Dopengl=true -Dosmesa=true -Dpower8=enabled -Degl-native-platform=drm -Db_lto=true -Dcpp_args="-Wno-typedef-redefinition -flto -O3" -Dc_args="-Wno-typedef-redefinition -flto -O3" 
 
 cd b
 ninja 
 cd ..
 #编译32位turnip + zink
 #cd /tmp/mesa
-meson build32 --cross-file=cross32.txt --libdir=lib/arm-linux-gnueabihf -Dgallium-drivers=virgl,zink,d3d12 -Dvulkan-drivers=freedreno -Dglx=dri -Dplatforms=x11,wayland -Dbuildtype=release -Dxlib-lease=enabled -Dgles2=enabled -Degl-native-platform=drm -Degl=enabled -Dfreedreno-kmds=kgsl,msm -Ddri3=enabled -Dvulkan-beta=true -Dvideo-codecs=vc1dec,h264dec,h264enc,h265dec,h265enc -Dglx-direct=true -Dtools=drm-shim,freedreno -Dopengl=true -Dpower8=enabled -Db_lto=true -Dc_args="-flto -O3"
+meson build32 --cross-file=cross32.txt --libdir=lib/arm-linux-gnueabihf -Dgallium-drivers=virgl,zink,d3d12 -Dvulkan-drivers=freedreno -Dglx=dri -Dplatforms=x11,wayland -Dbuildtype=release -Dxlib-lease=enabled -Dgles2=enabled -Degl-native-platform=drm -Degl=enabled -Dfreedreno-kmds=kgsl,msm -Ddri3=enabled -Dvulkan-beta=true -Dvideo-codecs=vc1dec,h264dec,h264enc,h265dec,h265enc -Dglx-direct=true -Dtools=drm-shim,freedreno -Dopengl=true -Dpower8=enabled -Db_lto=true -Dcpp_args="-O3 -flto" -Dc_args="-O3 -flto"
 
 cd build32
 ninja
