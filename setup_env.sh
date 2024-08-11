@@ -12,7 +12,7 @@ sudo sed -i 's/Types: deb/Types:deb deb-src/g' /etc/apt/sources.list.d/ubuntu.so
 sudo dpkg --add-architecture armhf
 sudo apt update
 sudo apt install -y cbindgen python3-certifi python3-pycparser
-git clone --depth=1 https://gitlab.freedesktop.org/mesa/mesa.git
+git clone --depth=1 https://gitlab.freedesktop.org/mesa/mesa.git -b 24.1
 echo "---------------------------------------------------------"
 echo "         End: Clean up and initial setup"
 echo "---------------------------------------------------------"
