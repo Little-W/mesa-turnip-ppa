@@ -1,6 +1,5 @@
 #! /bin/bash
 
-# 使用 readlink -f 将 ~ 转换为绝对路径
 home_path=$(readlink -f ~)
 cd ./mesa
 sudo cp -r /usr/include/drm/* /usr/include
@@ -46,15 +45,20 @@ ninja
 # 安装 32 位构建
 sudo ninja install
 
-# 打包为 .tgz 文件
+# 打包为 .tgz 文件，保留 /usr/local 目录结构
 cd ${home_path}
 mkdir -p ${home_path}/upload/
-tar -czf ${home_path}/upload/mesa-${mesa_version}-${commit_short}.tgz -C /usr/local .
+tar -czf ${home_path}/upload/mesa-${mesa_version}-${commit_short}.tgz -C / usr/local
 
-# 创建 DEBIAN 控制文件
-mkdir -p ${home_path}/mesa_deb/DEBIAN
-cat <<EOF > ${home_path}/mesa_deb/DEBIAN/control
-Package: mesa-adreno
+# 创建 DEBIAN 控制文件并打包为 .deb 文件
+create_deb_package () {
+    local dest_dir=$1
+    local package_name=$2
+    local install_prefix=$3
+
+    mkdir -p ${dest_dir}/DEBIAN
+    cat <<EOF > ${dest_dir}/DEBIAN/control
+Package: ${package_name}
 Version: ${mesa_version}-${commit_short}
 Architecture: arm64
 Maintainer: Yusen <1405481963@qq.com>
@@ -62,8 +66,14 @@ Depends: libc6 (>= ${libc_version}), ${libllvm_package}
 Description: Mesa 3D graphics library with Turnip and Zink for Adreno GPUs
 EOF
 
-# 将已安装的文件复制到 deb 目录结构中
-sudo cp -a /usr/local/* ${home_path}/mesa_deb/
+    # 将已安装的文件复制到 deb 目录结构中
+    sudo mkdir -p ${dest_dir}${install_prefix}
+    sudo cp -a /usr/local/* ${dest_dir}${install_prefix}
 
-# 打包为 .deb 文件
-dpkg-deb --build ${home_path}/mesa_deb ${home_path}/upload/mesa-${mesa_version}-${commit_short}.deb
+    # 打包为 .deb 文件
+    dpkg-deb --build ${dest_dir} ${home_path}/upload/${package_name}-${mesa_version}-${commit_short}.deb
+}
+
+# 创建两个版本的 deb 包
+create_deb_package "${home_path}/mesa_deb_root" "mesa-adreno-root" "/"
+create_deb_package "${home_path}/mesa_deb_local" "mesa-adreno-local" "/usr/local"
