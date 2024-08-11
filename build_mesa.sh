@@ -17,11 +17,10 @@ vulkan_version="$major.$minor.$patch"
 libc_version=$(dpkg-query -W -f='${Version}' libc6 | awk -F'-' '{print $1}' | tr -d '\n')
 libllvm_package=$(dpkg -l | grep '^ii' | grep -E 'libllvm[0-9]' | awk '{print $2}' | sort -V | tail -n 1 | cut -d ':' -f 1)
 
-# 应用补丁
-patch -p1 < ../turnip-patches/fix-for-anon-file.patch
-patch -p1 < ../turnip-patches/fix-for-getprogname.patch
-patch -p1 < ../turnip-patches/zink_fixes.patch
-patch -p1 < ../turnip-patches/dri3.patch
+# 应用turnip-patches目录下的所有补丁
+for patch in ../turnip-patches/*.patch; do
+    patch -p1 < "$patch"
+done
 
 # 清理 /usr/local
 sudo rm -rf /usr/local/*
