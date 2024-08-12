@@ -77,6 +77,12 @@ make -j8
 DESTDIR=${home_path}/box86_install
 make install DESTDIR=${DESTDIR}
 
+# 安装到默认目录（/usr/local）
+sudo make install
+
+# 替换临时目录中的二进制文件
+sudo cp /usr/local/bin/box86 ${DESTDIR}/usr/local/bin/
+
 # 打包成 .tgz 文件
 cd ${home_path}
 tar -czf ${home_path}/upload/box86-${box86_tag}-${box86_commit}.tgz -C ${DESTDIR} .
@@ -112,6 +118,12 @@ make -j8
 DESTDIR=${home_path}/box64_install
 make install DESTDIR=${DESTDIR}
 
+# 安装到默认目录（/usr/local）
+sudo make install
+
+# 替换临时目录中的二进制文件
+sudo cp /usr/local/bin/box64 ${DESTDIR}/usr/local/bin/
+
 # 打包成 .tgz 文件
 cd ${home_path}
 tar -czf ${home_path}/upload/box64-${box64_tag}-${box64_commit}.tgz -C ${DESTDIR} .
@@ -132,3 +144,6 @@ dpkg-deb --build ${DESTDIR} ${home_path}/upload/box64-${box64_tag}-${box64_commi
 
 # 打包成 .pkg.tar.gz 文件 (aarch64 for Arch Linux)
 create_pkg_package "${home_path}/box64_pkg" "box64" "/" "${deb_version}-${box64_commit}" "aarch64" "glibc"
+
+# 清理临时目录
+rm -rf ${DESTDIR}
