@@ -28,7 +28,7 @@ sudo apt install -y zlib1g-dev:armhf libexpat1-dev:armhf  \
 	        libxcb-glx0-dev:armhf libx11-xcb-dev:armhf libxcb-dri2-0-dev:armhf libxcb-dri3-dev:armhf \
 		    libxcb-present-dev:armhf libxshmfence-dev:armhf libxxf86vm-dev:armhf libxrandr-dev:armhf \
 		    libwayland-dev:armhf wayland-protocols:armhf libwayland-egl-backend-dev:armhf \
-		    libxcb-shm0-dev:armhf pkg-config:armhf
+		    libxcb-shm0-dev:armhf pkg-config:armhf libglvnd-dev:armhf
 echo "---------------------------------------------------------"
 echo "         End: Install mesa dependencies"
 echo "---------------------------------------------------------"

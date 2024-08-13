@@ -53,14 +53,14 @@ done
 sudo rm -rf /usr/local/*
 
 # 编译 64 位 turnip + zink + 解码库 + 镓九
-CC=clang CXX=clang++ meson b -Dgallium-drivers=virgl,zink,swrast,freedreno,d3d12 -Dvulkan-drivers=freedreno,swrast -Dglx=dri -Dplatforms=x11,wayland -Dbuildtype=release -Dllvm=enabled -Dxlib-lease=enabled -Dgles1=disabled -Dgles2=enabled -Dgallium-nine=true -Dgallium-opencl=icd -Degl=enabled -Dfreedreno-kmds=kgsl,msm -Ddri3=enabled -Dgbm=enabled -Dvulkan-beta=true -Dvideo-codecs=vc1dec,h264dec,h264enc,h265dec,h265enc -Dglx-direct=true -Dtools=drm-shim,freedreno -Dgallium-vdpau=enabled -Dopengl=true -Dosmesa=true -Dpower8=enabled -Degl-native-platform=x11 -Db_lto=true -Dxmlconfig=disabled -Dcpp_args="-Wno-typedef-redefinition -flto -O3" -Dc_args="-Wno-typedef-redefinition -flto -O3"
+CC=clang CXX=clang++ meson b -Dgallium-drivers=virgl,zink,swrast,freedreno,d3d12 -Dvulkan-drivers=freedreno,swrast -Dglx=dri -Dplatforms=x11,wayland -Dbuildtype=release -Dllvm=enabled -Dxlib-lease=enabled -Dgles1=enabled -Dgles2=enabled -Dgallium-nine=true -Dgallium-opencl=icd -Degl=enabled -Dfreedreno-kmds=kgsl,msm -Ddri3=enabled -Dgbm=enabled -Dvulkan-beta=true -Dvideo-codecs=vc1dec,h264dec,h264enc,h265dec,h265enc -Dglx-direct=true -Dtools=drm-shim,freedreno -Dgallium-vdpau=enabled -Dopengl=true -Dosmesa=true -Dpower8=enabled -Degl-native-platform=x11 -Dglvnd=enabled -Db_lto=true -Dcpp_args="-Wno-typedef-redefinition -flto -O3" -Dc_args="-Wno-typedef-redefinition -flto -O3"
 
 cd b
 ninja
 sudo ninja install
 
 cd ${proj_path}/mesa
-meson build32 --cross-file=cross32.txt --libdir=lib/arm-linux-gnueabihf -Dgallium-drivers=virgl,zink,freedreno,d3d12 -Dvulkan-drivers=freedreno -Dglx=dri -Dplatforms=x11,wayland -Dbuildtype=release -Dxlib-lease=enabled -Dgles1=disabled -Dgles2=enabled -Degl-native-platform=x11 -Degl=enabled -Dfreedreno-kmds=kgsl,msm -Ddri3=enabled -Dgbm=enabled -Dvulkan-beta=true -Dvideo-codecs=vc1dec,h264dec,h264enc,h265dec,h265enc -Dglx-direct=true -Dtools=drm-shim,freedreno -Dopengl=true -Dpower8=enabled -Db_lto=true -Dxmlconfig=disabled -Dcpp_args="-O3 -flto" -Dc_args="-O3 -flto"
+meson build32 --cross-file=cross32.txt --libdir=lib/arm-linux-gnueabihf -Dgallium-drivers=virgl,zink,freedreno,d3d12 -Dvulkan-drivers=freedreno -Dglx=dri -Dplatforms=x11,wayland -Dbuildtype=release -Dxlib-lease=enabled -Dgles1=enabled -Dgles2=enabled -Degl-native-platform=x11 -Degl=enabled -Dfreedreno-kmds=kgsl,msm -Ddri3=enabled -Dgbm=enabled -Dvulkan-beta=true -Dvideo-codecs=vc1dec,h264dec,h264enc,h265dec,h265enc -Dglx-direct=true -Dtools=drm-shim,freedreno -Dopengl=true -Dpower8=enabled -Dglvnd=disabled -Db_lto=true -Dcpp_args="-O3 -flto" -Dc_args="-O3 -flto"
 cd build32
 ninja
 
