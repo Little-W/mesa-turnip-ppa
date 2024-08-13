@@ -32,40 +32,6 @@ libc_version=$(dpkg-query -W -f='${Version}' libc6 | awk -F'-' '{print $1}' | tr
 # 准备上传目录
 mkdir -p ${home_path}/upload/
 
-# 函数: 打包成 .pkg.tar.gz 文件
-create_pkg_package () {
-    local dest_dir=$1
-    local package_name=$2
-    local install_prefix=$3
-    local version=$4
-    local arch=$5
-    local depends_name=$6
-
-    mkdir -p ${dest_dir}/pkg/metadata
-
-    # 创建 `desc` 文件
-    cat <<EOF > ${dest_dir}/pkg/metadata/desc
-%NAME%
-${package_name}
-%VERSION%
-${version}
-%ARCH%
-${arch}
-%DESC%
-${package_name} - A dynamic recompiler for running x86 applications on ARM platforms.
-%DEPENDS%
-${depends_name}>=${libc_version}
-EOF
-
-    # 将已安装的文件复制到 pkg 目录结构中
-    sudo mkdir -p ${dest_dir}/pkg${install_prefix}
-    sudo cp -a ${DESTDIR}/* ${dest_dir}/pkg${install_prefix}
-
-    # 打包为 .pkg.tar.gz 文件
-    cd ${dest_dir}
-    tar -czf ${home_path}/upload/${package_name}-${version}-${arch}.pkg.tar.gz -C pkg .
-}
-
 # 构建和安装 box86 (armv7h)
 cd box86
 mkdir build
@@ -100,9 +66,6 @@ Depends: libc6 (>= ${libc_version})
 Description: Box86 - A dynamic recompiler for running x86 applications on ARM platforms.
 EOF
 dpkg-deb --build ${DESTDIR} ${home_path}/upload/box86-${box86_tag}-${box86_commit}.deb
-
-# 打包成 .pkg.tar.gz 文件 (armv7h for Arch Linux)
-create_pkg_package "${home_path}/box86_pkg" "box86" "/" "${deb_version}-${box86_commit}" "armv7h" "glibc"
 
 # 清理临时目录
 rm -rf ${DESTDIR}
@@ -141,9 +104,6 @@ Depends: libc6 (>= ${libc_version})
 Description: Box64 - A dynamic recompiler for running x86_64 applications on ARM64 platforms.
 EOF
 dpkg-deb --build ${DESTDIR} ${home_path}/upload/box64-${box64_tag}-${box64_commit}.deb
-
-# 打包成 .pkg.tar.gz 文件 (aarch64 for Arch Linux)
-create_pkg_package "${home_path}/box64_pkg" "box64" "/" "${deb_version}-${box64_commit}" "aarch64" "glibc"
 
 # 清理临时目录
 rm -rf ${DESTDIR}

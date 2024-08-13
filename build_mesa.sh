@@ -27,37 +27,6 @@ EOF
     dpkg-deb --build ${dest_dir} ${home_path}/upload/${package_name}-${mesa_version}-${commit_short}.deb
 }
 
-create_pkg_package () {
-    local dest_dir=$1
-    local package_name=$2
-    local install_prefix=$3
-
-    mkdir -p ${dest_dir}/pkg/metadata
-
-    # 创建 `desc` 文件
-    cat <<EOF > ${dest_dir}/pkg/metadata/desc
-%NAME%
-${package_name}
-%VERSION%
-${mesa_version}-${commit_short}
-%ARCH%
-$(uname -m)
-%DESC%
-Mesa 3D graphics library with Turnip and Zink for Adreno GPUs
-%DEPENDS%
-glibc>=${libc_version}
-llvm-libs>=${llvm_libs_version}
-EOF
-
-    # 将已安装的文件复制到 pkg 目录结构中
-    sudo mkdir -p ${dest_dir}/pkg${install_prefix}
-    sudo cp -a /usr/local/* ${dest_dir}/pkg${install_prefix}
-
-    # 打包为 .pkg.tar.gz 文件
-    cd ${dest_dir}
-    tar -czf ${home_path}/upload/${package_name}-${mesa_version}-${commit_short}.pkg.tar.gz -C pkg .
-}
-
 cd ${proj_path}/mesa
 sudo cp -r /usr/include/drm/* /usr/include
 
@@ -73,7 +42,6 @@ vulkan_version="$major.$minor.$patch"
 # 获取关键依赖项的版本
 libc_version=$(dpkg-query -W -f='${Version}' libc6 | awk -F'-' '{print $1}' | tr -d '\n')
 libllvm_package=$(dpkg -l | grep '^ii' | grep -E 'libllvm[0-9]' | awk '{print $2}' | sort -V | tail -n 1 | cut -d ':' -f 1)
-llvm_libs_version=$(dpkg-query -W -f='${Version}' ${libllvm_package} | awk -F'-' '{print $1}' | tr -d '\n')
 
 # 应用turnip-patches目录下的所有补丁
 for patch in ../turnip-patches/*.patch; do
@@ -89,10 +57,6 @@ CC=clang CXX=clang++ meson b -Dgallium-drivers=virgl,zink,llvmpipe,freedreno,d3d
 cd b
 ninja
 sudo ninja install
-
-# 打包 LTO 版本的 Arch Linux .pkg.tar.gz 包
-create_pkg_package "${home_path}/mesa_pkg_lto_root" "mesa-adreno-lto-root" "/"
-create_pkg_package "${home_path}/mesa_pkg_lto_local" "mesa-adreno-lto-local" "/usr/local"
 
 cd ${proj_path}/mesa
 meson build32 --cross-file=cross32.txt --libdir=lib/arm-linux-gnueabihf -Dgallium-drivers=virgl,zink,freedreno,d3d12 -Dvulkan-drivers=freedreno -Dglx=dri -Dplatforms=x11,wayland -Dbuildtype=release -Dxlib-lease=enabled -Dgles1=disabled -Dgles2=enabled -Degl-native-platform=x11 -Degl=enabled -Dfreedreno-kmds=kgsl,msm -Ddri3=enabled -Dgbm=enabled -Dvulkan-beta=true -Dvideo-codecs=vc1dec,h264dec,h264enc,h265dec,h265enc -Dglx-direct=true -Dtools=drm-shim,freedreno -Dopengl=true -Dpower8=enabled -Db_lto=true -Dxmlconfig=disabled -Dcpp_args="-O3 -flto" -Dc_args="-O3 -flto"
