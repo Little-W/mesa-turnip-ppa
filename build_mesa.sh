@@ -85,7 +85,7 @@ done
 sudo rm -rf /usr/local/*
 
 # 编译 64 位 turnip + zink + 解码库 + 镓九
-CC=clang CXX=clang++ meson b --libdir=lib -Dgallium-drivers=virgl,zink,llvmpipe,freedreno,d3d12 -Dvulkan-drivers=freedreno,swrast -Dglx=dri -Dplatforms=x11,wayland -Dbuildtype=release -Dllvm=enabled -Dxlib-lease=enabled -Dgles1=disabled -Dgles2=enabled -Dgallium-nine=true -Dgallium-opencl=icd -Degl=enabled -Dfreedreno-kmds=kgsl,msm -Ddri3=enabled -Dgbm=enabled -Dvulkan-beta=true -Dvideo-codecs=vc1dec,h264dec,h264enc,h265dec,h265enc -Dglx-direct=true -Dtools=drm-shim,freedreno -Dgallium-vdpau=enabled -Dopengl=true -Dosmesa=true -Dpower8=enabled -Degl-native-platform=x11 -Dglvnd=disabled -Db_lto=true -Dcpp_args="-Wno-typedef-redefinition -flto -O3" -Dc_args="-Wno-typedef-redefinition -flto -O3"
+CC=clang CXX=clang++ meson b --libdir=lib -Dgallium-drivers=virgl,zink,llvmpipe,freedreno,d3d12 -Dvulkan-drivers=freedreno -Dglx=dri -Dplatforms=x11,wayland -Dbuildtype=release -Dllvm=enabled -Dxlib-lease=enabled -Dgles2=enabled -Dgallium-nine=true -Dgallium-opencl=icd -Degl=enabled -Dfreedreno-kmds=kgsl,msm -Ddri3=enabled -Dgbm=enabled -Dvulkan-beta=true -Dvideo-codecs=all -Dglx-direct=true -Dtools=drm-shim,freedreno -Dgallium-vdpau=enabled -Dopengl=true -Dosmesa=true -Dpower8=enabled -Degl-native-platform=x11 -Dglvnd=enabled -Db_lto=true -Dcpp_args="-Wno-typedef-redefinition -O3" -Dc_args="-Wno-typedef-redefinition -O3"
 
 cd b
 ninja
@@ -94,12 +94,12 @@ sudo ninja install
 # 打包为 .tgz 文件，保留 /usr/local 目录结构
 cd ${home_path}
 mkdir -p ${home_path}/upload/
-tar -czf ${home_path}/upload/mesa-${mesa_version}-${commit_short}-lto.tgz -C / usr/local
+tar -czf ${home_path}/upload/mesa-${mesa_version}-${commit_short}-lto-arch.tgz -C / usr/local
 
 # 打包 LTO 版本的 .deb 包
-create_deb_package "${home_path}/mesa_deb_lto_root" "mesa-adreno-lto-root" "/"
-create_deb_package "${home_path}/mesa_deb_lto_local" "mesa-adreno-lto-local" "/usr/local"
+create_deb_package "${home_path}/mesa_deb_lto_root" "mesa-adreno-lto-root-arch" "/"
+create_deb_package "${home_path}/mesa_deb_lto_local" "mesa-adreno-lto-local-arch" "/usr/local"
 
 # 打包 LTO 版本的 Arch Linux .pkg.tar.gz 包
-create_pkg_package "${home_path}/mesa_pkg_lto_root" "mesa-adreno-lto-root" "/"
-create_pkg_package "${home_path}/mesa_pkg_lto_local" "mesa-adreno-lto-local" "/usr/local"
+create_pkg_package "${home_path}/mesa_pkg_lto_root" "mesa-adreno-lto-root-arch" "/"
+create_pkg_package "${home_path}/mesa_pkg_lto_local" "mesa-adreno-lto-local-arch" "/usr/local"
