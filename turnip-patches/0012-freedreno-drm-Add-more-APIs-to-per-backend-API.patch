@@ -1,7 +1,7 @@
-From 3da961d24971616a48b1e34cc7d483105401fc72 Mon Sep 17 00:00:00 2001
+From 57893e7b96505c1ca8c30970e8b801f86f910ffe Mon Sep 17 00:00:00 2001
 From: Lucas Fryzek <lfryzek@igalia.com>
 Date: Mon, 27 Feb 2023 14:50:39 -0500
-Subject: [PATCH 02/17] freedreno/drm: Add more APIs to per backend API
+Subject: [PATCH 2/2] freedreno/drm: Add more APIs to per backend API
 
 Add bo_map, bo_from_dmabuf, and bo_close_handle to the per backend
 APIs for freedreno/drm. These changes are required to implement
@@ -16,10 +16,10 @@ a KGSL backend as part of freedreno/drm.
  6 files changed, 77 insertions(+), 17 deletions(-)
 
 diff --git a/src/freedreno/drm/freedreno_device.c b/src/freedreno/drm/freedreno_device.c
-index 7c00b8610a0..5082a59cb2d 100644
+index ce95c9f5e0a..0d0998eb265 100644
 --- a/src/freedreno/drm/freedreno_device.c
 +++ b/src/freedreno/drm/freedreno_device.c
-@@ -38,22 +38,26 @@ struct fd_device *msm_device_new(int fd, drmVersionPtr version);
+@@ -41,6 +41,9 @@ struct fd_device *msm_device_new(int fd, drmVersionPtr version);
  #ifdef HAVE_FREEDRENO_VIRTIO
  struct fd_device *virtio_device_new(int fd, drmVersionPtr version);
  #endif
@@ -27,7 +27,9 @@ index 7c00b8610a0..5082a59cb2d 100644
 +struct fd_device *kgsl_device_new(int fd);
 +#endif
  
- struct fd_device *
+ uint64_t os_page_size = 4096;
+ 
+@@ -48,19 +51,20 @@ struct fd_device *
  fd_device_new(int fd)
  {
     struct fd_device *dev = NULL;
@@ -35,6 +37,8 @@ index 7c00b8610a0..5082a59cb2d 100644
 +   drmVersionPtr version = NULL;
     bool use_heap = false;
 +   bool support_use_heap = true;
+ 
+    os_get_page_size(&os_page_size);
  
 +#ifdef HAVE_LIBDRM
     /* figure out if we are kgsl or msm drm driver: */
@@ -52,7 +56,7 @@ index 7c00b8610a0..5082a59cb2d 100644
        DEBUG_MSG("msm DRM device");
        if (version->version_major != 1) {
           ERROR_MSG("unsupported version: %u.%u.%u", version->version_major,
-@@ -63,7 +67,7 @@ fd_device_new(int fd)
+@@ -70,7 +74,7 @@ fd_device_new(int fd)
  
        dev = msm_device_new(fd, version);
  #ifdef HAVE_FREEDRENO_VIRTIO
@@ -61,7 +65,7 @@ index 7c00b8610a0..5082a59cb2d 100644
        DEBUG_MSG("virtio_gpu DRM device");
        dev = virtio_device_new(fd, version);
        /* Only devices that support a hypervisor are a6xx+, so avoid the
-@@ -71,10 +75,14 @@ fd_device_new(int fd)
+@@ -78,10 +82,14 @@ fd_device_new(int fd)
         */
        use_heap = true;
  #endif
@@ -79,7 +83,7 @@ index 7c00b8610a0..5082a59cb2d 100644
  #endif
     }
  
-@@ -119,7 +127,7 @@ out:
+@@ -129,7 +137,7 @@ out:
        fd_pipe_del(pipe);
     }
  
@@ -88,7 +92,7 @@ index 7c00b8610a0..5082a59cb2d 100644
        dev->ring_heap = fd_bo_heap_new(dev, RING_FLAGS);
        dev->default_heap = fd_bo_heap_new(dev, 0);
     }
-@@ -236,6 +244,12 @@ fd_dbg(void)
+@@ -248,6 +256,12 @@ fd_dbg(void)
     return debug_get_option_libgl();
  }
  
@@ -144,10 +148,10 @@ index dd073f201c2..3a5d852d082 100644
  /* buffer-object functions:
   */
 diff --git a/src/freedreno/drm/freedreno_pipe.c b/src/freedreno/drm/freedreno_pipe.c
-index c3fc7db41f5..9b8abb7b602 100644
+index 362e6966376..ea14976545e 100644
 --- a/src/freedreno/drm/freedreno_pipe.c
 +++ b/src/freedreno/drm/freedreno_pipe.c
-@@ -216,6 +216,12 @@ fd_pipe_emit_fence(struct fd_pipe *pipe, struct fd_ringbuffer *ring)
+@@ -225,6 +225,12 @@ fd_pipe_emit_fence(struct fd_pipe *pipe, struct fd_ringbuffer *ring)
     return fence;
  }
  
@@ -161,10 +165,10 @@ index c3fc7db41f5..9b8abb7b602 100644
  fd_fence_new(struct fd_pipe *pipe, bool use_fence_fd)
  {
 diff --git a/src/freedreno/drm/freedreno_priv.h b/src/freedreno/drm/freedreno_priv.h
-index b59629a7ee5..cc97dae73ab 100644
+index b2e7604026b..e5ec8442ea5 100644
 --- a/src/freedreno/drm/freedreno_priv.h
 +++ b/src/freedreno/drm/freedreno_priv.h
-@@ -207,6 +207,7 @@ struct fd_device {
+@@ -209,6 +209,7 @@ struct fd_device {
     int fd;
     enum fd_version version;
     int32_t refcnt;
@@ -172,7 +176,7 @@ index b59629a7ee5..cc97dae73ab 100644
  
     /* tables to keep track of bo's, to avoid "evil-twin" fd_bo objects:
      *
-@@ -308,6 +309,7 @@ struct fd_pipe_funcs {
+@@ -312,6 +313,7 @@ struct fd_pipe_funcs {
     struct fd_ringbuffer *(*ringbuffer_new_object)(struct fd_pipe *pipe,
                                                    uint32_t size);
     struct fd_submit *(*submit_new)(struct fd_pipe *pipe);
@@ -181,10 +185,10 @@ index b59629a7ee5..cc97dae73ab 100644
     /**
      * Flush any deferred submits (if deferred submits are supported by
 diff --git a/src/gallium/drivers/freedreno/freedreno_context.c b/src/gallium/drivers/freedreno/freedreno_context.c
-index e7f0981514b..333f111ed84 100644
+index ea2a45a2a3c..35c3488ede1 100644
 --- a/src/gallium/drivers/freedreno/freedreno_context.c
 +++ b/src/gallium/drivers/freedreno/freedreno_context.c
-@@ -498,6 +498,22 @@ fd_get_device_reset_status(struct pipe_context *pctx)
+@@ -497,6 +497,22 @@ fd_get_device_reset_status(struct pipe_context *pctx)
     return status;
  }
  
@@ -206,8 +210,8 @@ index e7f0981514b..333f111ed84 100644
 +
  static void
  fd_trace_record_ts(struct u_trace *ut, void *cs, void *timestamps,
-                    unsigned idx, bool end_of_pipe)
-@@ -663,11 +679,6 @@ fd_context_init(struct fd_context *ctx, struct pipe_screen *pscreen,
+                    unsigned idx, uint32_t flags)
+@@ -662,11 +678,6 @@ fd_context_init(struct fd_context *ctx, struct pipe_screen *pscreen,
  
     ctx->in_fence_fd = -1;
  
@@ -219,7 +223,7 @@ index e7f0981514b..333f111ed84 100644
     simple_mtx_init(&ctx->gmem_lock, mtx_plain);
  
     /* need some sane default in case gallium frontends don't
-@@ -682,13 +693,20 @@ fd_context_init(struct fd_context *ctx, struct pipe_screen *pscreen,
+@@ -681,13 +692,20 @@ fd_context_init(struct fd_context *ctx, struct pipe_screen *pscreen,
     pctx->flush = fd_context_flush;
     pctx->emit_string_marker = fd_emit_string_marker;
     pctx->set_debug_callback = fd_set_debug_callback;
@@ -242,10 +246,10 @@ index e7f0981514b..333f111ed84 100644
     if (!pctx->stream_uploader)
        goto fail;
 diff --git a/src/gallium/drivers/freedreno/freedreno_screen.c b/src/gallium/drivers/freedreno/freedreno_screen.c
-index 4461f796320..0eed065a21d 100644
+index 64a28e955f4..51f1b61b9da 100644
 --- a/src/gallium/drivers/freedreno/freedreno_screen.c
 +++ b/src/gallium/drivers/freedreno/freedreno_screen.c
-@@ -624,6 +624,11 @@ fd_screen_get_param(struct pipe_screen *pscreen, enum pipe_cap param)
+@@ -629,6 +629,11 @@ fd_screen_get_param(struct pipe_screen *pscreen, enum pipe_cap param)
        return 0;
     case PIPE_CAP_THROTTLE:
        return screen->driconf.enable_throttling;
@@ -258,5 +262,5 @@ index 4461f796320..0eed065a21d 100644
        return u_pipe_screen_get_param_defaults(pscreen, param);
     }
 -- 
-2.45.2
+2.46.0
 

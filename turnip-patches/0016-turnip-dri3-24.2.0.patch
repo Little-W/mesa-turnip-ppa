@@ -1,8 +1,77 @@
+diff --git a/src/freedreno/vulkan/tu_shader.cc b/src/freedreno/vulkan/tu_shader.cc
+index 1f7f077..ddd0f1a 100644
+--- a/src/freedreno/vulkan/tu_shader.cc
++++ b/src/freedreno/vulkan/tu_shader.cc
+@@ -2124,10 +2124,10 @@ tu_upload_shader(struct tu_device *dev,
+       size += vpc_size;
+    }
+ 
+-   pthread_mutex_lock(&dev->pipeline_mutex);
++   mtx_lock(&dev->pipeline_mutex);
+    VkResult result = tu_suballoc_bo_alloc(&shader->bo, &dev->pipeline_suballoc,
+                                           size * 4, 128);
+-   pthread_mutex_unlock(&dev->pipeline_mutex);
++   mtx_unlock(&dev->pipeline_mutex);
+ 
+    if (result != VK_SUCCESS)
+       return result;
+@@ -2157,9 +2157,9 @@ tu_upload_shader(struct tu_device *dev,
+ 
+    result = tu_setup_pvtmem(dev, shader, &pvtmem_config, pvtmem_size, per_wave);
+    if (result != VK_SUCCESS) {
+-      pthread_mutex_lock(&dev->pipeline_mutex);
++      mtx_lock(&dev->pipeline_mutex);
+       tu_suballoc_bo_free(&dev->pipeline_suballoc, &shader->bo);
+-      pthread_mutex_unlock(&dev->pipeline_mutex);
++      mtx_unlock(&dev->pipeline_mutex);
+       return result;
+    }
+ 
+@@ -2853,10 +2853,10 @@ tu_empty_shader_create(struct tu_device *dev,
+    if (!shader)
+       return VK_ERROR_OUT_OF_HOST_MEMORY;
+ 
+-   pthread_mutex_lock(&dev->pipeline_mutex);
++   mtx_lock(&dev->pipeline_mutex);
+    VkResult result = tu_suballoc_bo_alloc(&shader->bo, &dev->pipeline_suballoc,
+                                           32 * 4, 128);
+-   pthread_mutex_unlock(&dev->pipeline_mutex);
++   mtx_unlock(&dev->pipeline_mutex);
+ 
+    if (result != VK_SUCCESS) {
+       vk_free(&dev->vk.alloc, shader);
+@@ -2968,9 +2968,9 @@ tu_shader_destroy(struct tu_device *dev,
+    tu_cs_finish(&shader->cs);
+    TU_RMV(resource_destroy, dev, &shader->bo);
+ 
+-   pthread_mutex_lock(&dev->pipeline_mutex);
++   mtx_lock(&dev->pipeline_mutex);
+    tu_suballoc_bo_free(&dev->pipeline_suballoc, &shader->bo);
+-   pthread_mutex_unlock(&dev->pipeline_mutex);
++   mtx_unlock(&dev->pipeline_mutex);
+ 
+    if (shader->pvtmem_bo)
+       tu_bo_finish(dev, shader->pvtmem_bo);
+diff --git a/src/freedreno/vulkan/tu_wsi.cc b/src/freedreno/vulkan/tu_wsi.cc
+index 57cf904..4b397e7 100644
+--- a/src/freedreno/vulkan/tu_wsi.cc
++++ b/src/freedreno/vulkan/tu_wsi.cc
+@@ -48,6 +48,10 @@ tu_wsi_init(struct tu_physical_device *physical_device)
+    if (result != VK_SUCCESS)
+       return result;
+ 
++   if (strcmp(physical_device->instance->knl->name, "kgsl") == 0) {
++      physical_device->wsi_device.is_tu_kgsl = true;
++   }
++
+    physical_device->wsi_device.supports_modifiers = true;
+    physical_device->wsi_device.can_present_on_device =
+       tu_wsi_can_present_on_device;
 diff --git a/src/vulkan/wsi/wsi_common.c b/src/vulkan/wsi/wsi_common.c
-index 2b7d871..88f735d 100644
+index 898bdd7..83d1feb 100644
 --- a/src/vulkan/wsi/wsi_common.c
 +++ b/src/vulkan/wsi/wsi_common.c
-@@ -1545,7 +1545,7 @@ wsi_common_queue_present(const struct wsi_device *wsi,
+@@ -1543,7 +1543,7 @@ wsi_common_queue_present(const struct wsi_device *wsi,
  #endif
        }
  
@@ -11,7 +80,7 @@ index 2b7d871..88f735d 100644
  	      wsi->WaitForFences(device, 1, &swapchain->fences[image_index],
  				 true, ~0ull);
  
-@@ -2183,7 +2183,7 @@ wsi_configure_cpu_image(const struct wsi_swapchain *chain,
+@@ -2181,7 +2181,7 @@ wsi_configure_cpu_image(const struct wsi_swapchain *chain,
                          const struct wsi_cpu_image_params *params,
                          struct wsi_image_info *info)
  {
@@ -33,10 +102,10 @@ index 014cb71..a70a607 100644
     /* Set to true if the implementation is ok with linear WSI images. */
     bool wants_linear;
 diff --git a/src/vulkan/wsi/wsi_common_display.c b/src/vulkan/wsi/wsi_common_display.c
-index 3dc4a67..df8a902 100644
+index f204910..f2e76dd 100644
 --- a/src/vulkan/wsi/wsi_common_display.c
 +++ b/src/vulkan/wsi/wsi_common_display.c
-@@ -175,6 +175,12 @@ struct wsi_display_sync {
+@@ -176,6 +176,12 @@ struct wsi_display_sync {
  
  static uint64_t fence_sequence;
  
@@ -49,7 +118,7 @@ index 3dc4a67..df8a902 100644
  ICD_DEFINE_NONDISP_HANDLE_CASTS(wsi_display_mode, VkDisplayModeKHR)
  ICD_DEFINE_NONDISP_HANDLE_CASTS(wsi_display_connector, VkDisplayKHR)
  
-@@ -1340,7 +1346,9 @@ wsi_display_wait_thread(void *data)
+@@ -1341,7 +1347,9 @@ wsi_display_wait_thread(void *data)
        .events = POLLIN
     };
  
@@ -59,7 +128,7 @@ index 3dc4a67..df8a902 100644
     for (;;) {
        int ret = poll(&pollfd, 1, -1);
        if (ret > 0) {
-@@ -1368,9 +1376,22 @@ wsi_display_start_wait_thread(struct wsi_display *wsi)
+@@ -1369,9 +1377,22 @@ wsi_display_start_wait_thread(struct wsi_display *wsi)
  static void
  wsi_display_stop_wait_thread(struct wsi_display *wsi)
  {
@@ -72,7 +141,7 @@ index 3dc4a67..df8a902 100644
 +   sigaction (SIGUSR2, &actions, NULL);
 +#endif
 +
-    pthread_mutex_lock(&wsi->wait_mutex);
+    mtx_lock(&wsi->wait_mutex);
     if (wsi->wait_thread) {
 +#ifndef __linux__
        pthread_cancel(wsi->wait_thread);
@@ -82,7 +151,7 @@ index 3dc4a67..df8a902 100644
        pthread_join(wsi->wait_thread, NULL);
        wsi->wait_thread = 0;
     }
-@@ -2214,7 +2235,9 @@ udev_event_listener_thread(void *data)
+@@ -2215,7 +2236,9 @@ udev_event_listener_thread(void *data)
  
     int udev_fd = udev_monitor_get_fd(mon);
  
@@ -92,7 +161,7 @@ index 3dc4a67..df8a902 100644
  
     for (;;) {
        nfds_t nfds = 1;
-@@ -2337,6 +2360,15 @@ wsi_display_finish_wsi(struct wsi_device *wsi_device,
+@@ -2340,6 +2363,15 @@ wsi_display_finish_wsi(struct wsi_device *wsi_device,
     struct wsi_display *wsi =
        (struct wsi_display *) wsi_device->wsi[VK_ICD_WSI_PLATFORM_DISPLAY];
  
@@ -108,7 +177,7 @@ index 3dc4a67..df8a902 100644
     if (wsi) {
        wsi_for_each_connector(connector, wsi) {
           wsi_for_each_display_mode(mode, connector) {
-@@ -2348,7 +2380,11 @@ wsi_display_finish_wsi(struct wsi_device *wsi_device,
+@@ -2351,7 +2383,11 @@ wsi_display_finish_wsi(struct wsi_device *wsi_device,
        wsi_display_stop_wait_thread(wsi);
  
        if (wsi->hotplug_thread) {
@@ -121,7 +190,7 @@ index 3dc4a67..df8a902 100644
        }
  
 diff --git a/src/vulkan/wsi/wsi_common_drm.c b/src/vulkan/wsi/wsi_common_drm.c
-index dc63673..0fc46c0 100644
+index 9835f8f..ba73f67 100644
 --- a/src/vulkan/wsi/wsi_common_drm.c
 +++ b/src/vulkan/wsi/wsi_common_drm.c
 @@ -45,6 +45,9 @@
@@ -159,10 +228,10 @@ index dc63673..0fc46c0 100644
  
  static VkResult
 diff --git a/src/vulkan/wsi/wsi_common_x11.c b/src/vulkan/wsi/wsi_common_x11.c
-index c6afea8..dc79d62 100644
+index 0c0c489..41eb565 100644
 --- a/src/vulkan/wsi/wsi_common_x11.c
 +++ b/src/vulkan/wsi/wsi_common_x11.c
-@@ -146,22 +146,7 @@ static bool
+@@ -149,22 +149,7 @@ static bool
  wsi_x11_check_dri3_compatible(const struct wsi_device *wsi_dev,
                                xcb_connection_t *conn)
  {
@@ -177,7 +246,7 @@ index c6afea8..dc79d62 100644
 -   if (dri3_fd == -1)
 -      return true;
 -
--   bool match = wsi_device_matches_drm_fd(wsi_dev, dri3_fd);
+-   bool match = wsi_dev->can_present_on_device(wsi_dev->pdevice, dri3_fd);
 -
 -   close(dri3_fd);
 -
@@ -186,7 +255,7 @@ index c6afea8..dc79d62 100644
  }
  
  static bool
-@@ -1395,7 +1380,6 @@ x11_present_to_x11_dri3(struct x11_swapchain *chain, uint32_t image_index,
+@@ -1402,7 +1387,6 @@ x11_present_to_x11_dri3(struct x11_swapchain *chain, uint32_t image_index,
        options |= XCB_PRESENT_OPTION_SUBOPTIMAL;
  #endif
  
@@ -194,7 +263,7 @@ index c6afea8..dc79d62 100644
  
     if (!chain->base.image_info.explicit_sync) {
        ++chain->sent_image_count;
-@@ -1747,9 +1731,6 @@ x11_acquire_next_image(struct wsi_swapchain *anv_chain,
+@@ -1771,9 +1755,6 @@ x11_acquire_next_image(struct wsi_swapchain *anv_chain,
        return result;
  
     assert(*image_index < chain->base.image_count);
@@ -204,7 +273,7 @@ index c6afea8..dc79d62 100644
  
     return result;
  }
-@@ -2114,15 +2095,24 @@ x11_image_init(VkDevice device_h, struct x11_swapchain *chain,
+@@ -2139,15 +2120,24 @@ x11_image_init(VkDevice device_h, struct x11_swapchain *chain,
        if (fd == -1)
           return VK_ERROR_OUT_OF_HOST_MEMORY;
  
@@ -238,7 +307,7 @@ index c6afea8..dc79d62 100644
     }
  
     error = xcb_request_check(chain->conn, cookie);
-@@ -2152,6 +2142,9 @@ x11_image_init(VkDevice device_h, struct x11_swapchain *chain,
+@@ -2177,6 +2167,9 @@ x11_image_init(VkDevice device_h, struct x11_swapchain *chain,
     }
  #endif
  
@@ -248,7 +317,7 @@ index c6afea8..dc79d62 100644
  out_fence:
     fence_fd = xshmfence_alloc_shm();
     if (fence_fd < 0)
-@@ -2193,10 +2186,6 @@ x11_image_finish(struct x11_swapchain *chain,
+@@ -2218,10 +2211,6 @@ x11_image_finish(struct x11_swapchain *chain,
     xcb_void_cookie_t cookie;
  
     if (!chain->base.wsi->sw || chain->has_mit_shm) {
