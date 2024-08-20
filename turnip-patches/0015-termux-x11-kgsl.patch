@@ -1,8 +1,8 @@
 diff --git a/src/egl/drivers/dri2/egl_dri2.c b/src/egl/drivers/dri2/egl_dri2.c
-index 9059eda..a6b5d61 100644
+index 7ff9595..9b9c7a2 100644
 --- a/src/egl/drivers/dri2/egl_dri2.c
 +++ b/src/egl/drivers/dri2/egl_dri2.c
-@@ -840,6 +840,9 @@ dri2_setup_device(_EGLDisplay *disp, EGLBoolean software)
+@@ -838,6 +838,9 @@ dri2_setup_device(_EGLDisplay *disp, EGLBoolean software)
     /* If we're not software, we need a DRM node FD */
     assert(software || dri2_dpy->fd_render_gpu >= 0);
  
@@ -103,25 +103,10 @@ index 479b26d..ba63a3f 100644
        EGLBoolean Zink;           /**< Use kopper only */
        EGLBoolean FallbackZink;   /**< True if zink is tried as fallback */
        EGLBoolean ForceSoftware;  /**< Use software path only */
-diff --git a/src/loader/loader.c b/src/loader/loader.c
-index e9eb4d8..a90b4a3 100644
---- a/src/loader/loader.c
-+++ b/src/loader/loader.c
-@@ -647,6 +647,10 @@ loader_get_linux_pci_id_for_fd(int fd, int *vendor_id, int *chip_id)
- bool
- loader_get_pci_id_for_fd(int fd, int *vendor_id, int *chip_id)
- {
-+   const char *env = getenv("MESA_LOADER_DRIVER_OVERRIDE");
-+   if (env && !strcmp(env, "kgsl"))
-+      return false;
-+
- #ifdef __linux__
-    /* Implementation without causing full enumeration of DRM devices. */
-    if (loader_get_linux_pci_id_for_fd(fd, vendor_id, chip_id))
-diff --git a/src/loader_dri3/loader_dri3_helper.c b/src/loader_dri3/loader_dri3_helper.c
-index c58abdd..1e9b5bb 100644
---- a/src/loader_dri3/loader_dri3_helper.c
-+++ b/src/loader_dri3/loader_dri3_helper.c
+diff --git a/src/gallium/frontends/dri/loader_dri3_helper.c b/src/gallium/frontends/dri/loader_dri3_helper.c
+index 49cff99..f0b9ad5 100644
+--- a/src/gallium/frontends/dri/loader_dri3_helper.c
++++ b/src/gallium/frontends/dri/loader_dri3_helper.c
 @@ -26,14 +26,13 @@
  #include <unistd.h>
  #include <string.h>
@@ -169,7 +154,7 @@ index c58abdd..1e9b5bb 100644
     dri2_destroy_image(buffer->image);
     if (buffer->linear_buffer)
        dri2_destroy_image(buffer->linear_buffer);
-@@ -1119,26 +1113,7 @@ loader_dri3_swap_buffers_msc(struct loader_dri3_drawable *draw,
+@@ -1120,26 +1114,7 @@ loader_dri3_swap_buffers_msc(struct loader_dri3_drawable *draw,
        back->busy = 1;
        back->last_swap = draw->send_sbc;
  
@@ -196,7 +181,7 @@ index c58abdd..1e9b5bb 100644
  
        xcb_present_pixmap(draw->conn,
                           draw->drawable,
-@@ -1367,27 +1342,13 @@ dri3_alloc_render_buffer(struct loader_dri3_drawable *draw, unsigned int fourcc,
+@@ -1368,27 +1343,13 @@ dri3_alloc_render_buffer(struct loader_dri3_drawable *draw, unsigned int fourcc,
     __DRIimage *pixmap_buffer = NULL, *linear_buffer_display_gpu = NULL;
     int format = loader_fourcc_to_image_format(fourcc);
     xcb_pixmap_t pixmap;
@@ -225,7 +210,7 @@ index c58abdd..1e9b5bb 100644
     /* Allocate the image from the driver
      */
     buffer = calloc(1, sizeof *buffer);
-@@ -1585,7 +1546,7 @@ dri3_alloc_render_buffer(struct loader_dri3_drawable *draw, unsigned int fourcc,
+@@ -1586,7 +1547,7 @@ dri3_alloc_render_buffer(struct loader_dri3_drawable *draw, unsigned int fourcc,
                                     buffer->strides[2], buffer->offsets[2],
                                     buffer->strides[3], buffer->offsets[3],
                                     depth, buffer->cpp * 8,
@@ -234,7 +219,7 @@ index c58abdd..1e9b5bb 100644
                                     buffer_fds);
     } else
  #endif
-@@ -1599,16 +1560,8 @@ dri3_alloc_render_buffer(struct loader_dri3_drawable *draw, unsigned int fourcc,
+@@ -1600,16 +1561,8 @@ dri3_alloc_render_buffer(struct loader_dri3_drawable *draw, unsigned int fourcc,
                                    buffer_fds[0]);
     }
  
@@ -251,7 +236,7 @@ index c58abdd..1e9b5bb 100644
     buffer->width = width;
     buffer->height = height;
  
-@@ -1630,9 +1583,6 @@ no_linear_buffer:
+@@ -1631,9 +1584,6 @@ no_linear_buffer:
  no_image:
     free(buffer);
  no_buffer:
@@ -261,7 +246,7 @@ index c58abdd..1e9b5bb 100644
     return NULL;
  }
  
-@@ -1860,11 +1810,8 @@ dri3_get_pixmap_buffer(__DRIdrawable *driDrawable, unsigned int fourcc,
+@@ -1902,11 +1852,8 @@ dri3_get_pixmap_buffer(__DRIdrawable *driDrawable, unsigned int fourcc,
     int                                  buf_id = loader_dri3_pixmap_buf_id(buffer_type);
     struct loader_dri3_buffer            *buffer = draw->buffers[buf_id];
     xcb_drawable_t                       pixmap;
@@ -273,7 +258,7 @@ index c58abdd..1e9b5bb 100644
     __DRIscreen                          *cur_screen;
  
     if (buffer)
-@@ -1876,15 +1823,6 @@ dri3_get_pixmap_buffer(__DRIdrawable *driDrawable, unsigned int fourcc,
+@@ -1918,15 +1865,6 @@ dri3_get_pixmap_buffer(__DRIdrawable *driDrawable, unsigned int fourcc,
     if (!buffer)
        goto no_buffer;
  
@@ -289,7 +274,7 @@ index c58abdd..1e9b5bb 100644
     /* Get the currently-bound screen or revert to using the drawable's screen if
      * no contexts are currently bound. The latter case is at least necessary for
      * obs-studio, when using Window Capture (Xcomposite) as a Source.
-@@ -1894,11 +1832,6 @@ dri3_get_pixmap_buffer(__DRIdrawable *driDrawable, unsigned int fourcc,
+@@ -1936,11 +1874,6 @@ dri3_get_pixmap_buffer(__DRIdrawable *driDrawable, unsigned int fourcc,
         cur_screen = draw->dri_screen_render_gpu;
     }
  
@@ -298,10 +283,10 @@ index c58abdd..1e9b5bb 100644
 -                          (sync_fence = xcb_generate_id(draw->conn)),
 -                          false,
 -                          fence_fd);
- #ifdef HAVE_DRI3_MODIFIERS
-    if (draw->multiplanes_available) {
-       xcb_dri3_buffers_from_pixmap_cookie_t bps_cookie;
-@@ -1942,17 +1875,12 @@ dri3_get_pixmap_buffer(__DRIdrawable *driDrawable, unsigned int fourcc,
+    buffer->image = loader_dri3_get_pixmap_buffer(draw->conn, pixmap, cur_screen, fourcc,
+                                                  draw->multiplanes_available, &width, &height, buffer);
+ 
+@@ -1951,17 +1884,12 @@ dri3_get_pixmap_buffer(__DRIdrawable *driDrawable, unsigned int fourcc,
     buffer->own_pixmap = false;
     buffer->width = width;
     buffer->height = height;
@@ -319,18 +304,33 @@ index c58abdd..1e9b5bb 100644
     free(buffer);
  no_buffer:
     return NULL;
+diff --git a/src/loader/loader.c b/src/loader/loader.c
+index e9eb4d8..a90b4a3 100644
+--- a/src/loader/loader.c
++++ b/src/loader/loader.c
+@@ -647,6 +647,10 @@ loader_get_linux_pci_id_for_fd(int fd, int *vendor_id, int *chip_id)
+ bool
+ loader_get_pci_id_for_fd(int fd, int *vendor_id, int *chip_id)
+ {
++   const char *env = getenv("MESA_LOADER_DRIVER_OVERRIDE");
++   if (env && !strcmp(env, "kgsl"))
++      return false;
++
+ #ifdef __linux__
+    /* Implementation without causing full enumeration of DRM devices. */
+    if (loader_get_linux_pci_id_for_fd(fd, vendor_id, chip_id))
 diff --git a/src/x11/loader_x11.c b/src/x11/loader_x11.c
-index a417af8..503c180 100644
+index 338c705..87becec 100644
 --- a/src/x11/loader_x11.c
 +++ b/src/x11/loader_x11.c
-@@ -25,6 +25,7 @@
- #include <stdlib.h>
- #include <fcntl.h>
- #include <unistd.h>
-+#include <string.h>
- #include <xcb/xcb.h>
+@@ -29,6 +29,7 @@
  #include <xcb/dri3.h>
  #include <xcb/present.h>
+ #include <xcb/xfixes.h>
++#include <string.h>
+ #include "loader_x11.h"
+ /** x11_dri3_open
+  *
 @@ -46,6 +47,10 @@ x11_dri3_open(xcb_connection_t *conn,
     int                          fd;
     const xcb_query_extension_reply_t *extension;
@@ -343,13 +343,13 @@ index a417af8..503c180 100644
     extension = xcb_get_extension_data(conn, &xcb_dri3_id);
     if (!(extension && extension->present))
 diff --git a/src/x11/loader_x11.h b/src/x11/loader_x11.h
-index 27edd47..75a8ca7 100644
+index 5aa6262..3755e75 100644
 --- a/src/x11/loader_x11.h
 +++ b/src/x11/loader_x11.h
-@@ -28,5 +28,6 @@
+@@ -28,5 +28,5 @@
  #include <inttypes.h>
  int x11_dri3_open(xcb_connection_t *conn, xcb_window_t root, uint32_t provider);
- bool x11_dri3_check_multibuffer(xcb_connection_t *c, bool *err);
+ bool x11_dri3_check_multibuffer(xcb_connection_t *c, bool *err, bool *explicit_modifiers);
+-
 +int loader_open_device(const char *);
- 
  #endif
