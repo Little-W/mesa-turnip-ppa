@@ -29,7 +29,7 @@ index ce95c9f5e0a..0d0998eb265 100644
  
  uint64_t os_page_size = 4096;
  
-@@ -48,19 +51,20 @@ struct fd_device *
+@@ -46,17 +49,18 @@ struct fd_device *
  fd_device_new(int fd)
  {
     struct fd_device *dev = NULL;
@@ -37,8 +37,6 @@ index ce95c9f5e0a..0d0998eb265 100644
 +   drmVersionPtr version = NULL;
     bool use_heap = false;
 +   bool support_use_heap = true;
- 
-    os_get_page_size(&os_page_size);
  
 +#ifdef HAVE_LIBDRM
     /* figure out if we are kgsl or msm drm driver: */

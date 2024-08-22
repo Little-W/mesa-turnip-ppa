@@ -38,7 +38,7 @@ new file mode 100644
 index 00000000000..d42400207ad
 --- /dev/null
 +++ b/src/freedreno/drm/kgsl/kgsl_bo.c
-@@ -0,0 +1,295 @@
+@@ -0,0 +1,343 @@
 +#include "kgsl_priv.h"
 +#include "util/os_file.h"
 +#include "util/os_mman.h"
@@ -231,7 +231,55 @@ index 00000000000..d42400207ad
 +}
 +
 +static int
-+dma_heap_alloc(uint64_t size)
++ion_legacy_alloc(int ion_fd, size_t size)
++{
++   struct ion_allocation_data_legacy {
++      size_t len;
++      size_t align;
++      unsigned int heap_id_mask;
++      unsigned int flags;
++      int handle;
++   } alloc = {
++      .len = size,
++      .align = 4096,
++      .heap_id_mask = (1u << 25),
++      .flags = 0,
++      .handle = -1,
++   };
++
++   int ret;
++   ret = kgsl_pipe_safe_ioctl(ion_fd, _IOWR('I', 0, struct ion_allocation_data_legacy), &alloc);
++   if (ret)
++      return -1;
++
++   struct ion_fd_data_legacy {
++      int handle;
++      int fd;
++   } share = {
++      .handle = alloc.handle,
++      .fd = -1,
++   };
++
++   ret = kgsl_pipe_safe_ioctl(ion_fd, _IOWR('I', 4, struct ion_fd_data_legacy), &share);
++   if (ret)
++      return -1;
++
++   struct ion_handle_data_legacy {
++      int handle;
++   } free = {
++      .handle = alloc.handle,
++   };
++   ret = kgsl_pipe_safe_ioctl(ion_fd, _IOWR('I', 1, struct ion_handle_data_legacy), &free);
++   if (ret)
++      return -1;
++
++   close(ion_fd);
++
++   return share.fd;
++}
++
++static int
++dma_heap_alloc(size_t size)
 +{
 +   int ret;
 +   int dma_heap = open("/dev/dma_heap/system", O_RDONLY);
@@ -258,10 +306,10 @@ index 00000000000..d42400207ad
 +      ret = kgsl_pipe_safe_ioctl(ion_heap, _IOWR('I', 0, struct ion_allocation_data),
 +                      &alloc_data);
 +
-+      close(ion_heap);
-+
 +      if (ret)
-+         return -1;
++         return ion_legacy_alloc(ion_heap, size);
++
++      close(ion_heap);
 +
 +      return alloc_data.fd;
 +   } else {
