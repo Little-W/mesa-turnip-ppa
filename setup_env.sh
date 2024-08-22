@@ -10,7 +10,7 @@ sudo apt update
 sudo apt install -y cmake git wget
 sudo sed -i 's/Types: deb/Types:deb deb-src/g' /etc/apt/sources.list.d/ubuntu.sources
 sudo apt update
-git clone --depth=1 https://gitlab.freedesktop.org/mesa/mesa.git -b mesa-24.1.5
+git clone --depth=1 https://gitlab.freedesktop.org/mesa/mesa.git -b 24.1
 echo "---------------------------------------------------------"
 echo "         End: Clean up and initial setup"
 echo "---------------------------------------------------------"

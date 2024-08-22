@@ -54,7 +54,7 @@ done
 sudo rm -rf /usr/local/*
 
 # 编译 64 位 turnip + zink + 解码库 + 镓九
-meson b -Dgallium-drivers=virgl,zink,swrast,freedreno,d3d12 -Dvulkan-drivers=freedreno -Dglx=dri -Dplatforms=x11,wayland -Dbuildtype=release -Dllvm=enabled -Dxlib-lease=enabled -Dimagination-srv=true -Dvulkan-layers=device-select -Dgles2=enabled -Degl=enabled -Dgallium-nine=true -Dgallium-opencl=icd -Degl=enabled -Dfreedreno-kmds=kgsl,msm -Ddri3=enabled -Dgbm=enabled -Dvulkan-beta=true -Dvideo-codecs=all -Dglx-direct=true -Dtools=drm-shim,freedreno -Dgallium-vdpau=enabled -Dopengl=true -Dosmesa=true -Dpower8=enabled -Degl-native-platform=x11 -Dglvnd=enabled -Db_lto=true -Dcpp_args="-Wno-typedef-redefinition -O3 -march=armv8.2-a+crc+simd+crypto -mtune=cortex-a76.cortex-a55" -Dc_args="-Wno-typedef-redefinition -O3 -march=armv8.2-a+crc+simd+crypto -mtune=cortex-a76.cortex-a55"
+meson b -Dgallium-drivers=virgl,zink,swrast,freedreno,d3d12 -Dvulkan-drivers=freedreno -Dglx=dri -Dplatforms=x11,wayland -Dbuildtype=release -Dllvm=enabled -Dxlib-lease=enabled -Dimagination-srv=true -Dvulkan-layers=device-select -Dgles2=enabled -Degl=enabled -Dgallium-nine=true -Dgallium-opencl=icd -Degl=enabled -Dfreedreno-kmds=kgsl,msm -Ddri3=enabled -Dgbm=enabled -Dvulkan-beta=true -Dvideo-codecs=all -Dglx-direct=true -Dtools=drm-shim,freedreno -Dgallium-vdpau=enabled -Dopengl=true -Dosmesa=true -Dpower8=enabled -Degl-native-platform=x11 -Dglvnd=enabled -Db_lto=true -Dcpp_args="-Wno-narrowing -Wno-incompatible-pointer-types -O3 -march=armv8.2-a+crc+simd+crypto -mtune=cortex-a76.cortex-a55" -Dc_args="-Wno-narrowing -Wno-incompatible-pointer-types -O3 -march=armv8.2-a+crc+simd+crypto -mtune=cortex-a76.cortex-a55"
 
 cd b
 ninja
