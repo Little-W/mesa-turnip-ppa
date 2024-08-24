@@ -1,16 +1,10 @@
-# 使用Ubuntu arm64基础镜像
 FROM arm64v8/ubuntu:24.04 As dev-image
 WORKDIR /root
-
-# 复制必要的文件到工作目录
-COPY mesa mesa
-COPY turnip-patches turnip-patches
-COPY files files
-COPY build_mesa.sh build_mesa.sh
-COPY setup_env.sh setup_env.sh
-
-# 配置环境并构建mesa
-RUN bash setup_env.sh \
-&& bash build_mesa.sh
-
-# 构建后的文件保存在 /root/upload/ 目录下
+# 为了能apt build-dep需要添加deb-src。不确定security添加了src会不会有问题，但也不知道怎么排除。
+RUN sed -i 's/Types: deb/Types:deb deb-src/g' /etc/apt/sources.list.d/ubuntu.sources \
+&& dpkg --add-architecture armhf \
+&& apt update \
+&& apt upgrade -y \
+&& apt build-dep -y mesa \
+&& apt install -y libclang-18-dev libclang-common-18-dev libclang-cpp18-dev libclc-18 libclc-18-dev libllvmspirvlib-18-dev llvm-spirv-18 libpolly-18-dev llvm-18* \
+&& apt install -y libssl-dev liblz4-dev liburing2

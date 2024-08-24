@@ -1,0 +1,42 @@
+name: 构建ARM64交叉编译环境
+
+on:
+  schedule:
+    - cron:  0 0 1 */2 *
+  push:
+  workflow_dispatch:
+
+jobs:
+  linux-arm64:
+    runs-on: ubuntu-24.04
+    steps:
+        
+    - name: 克隆仓库
+      uses: actions/checkout@v4
+      
+    - name: 重命名Dockerfile
+      run: mv Dockerfiles/Dockerfile-linux-arm64 Dockerfile
+      
+    - name: 使用action设置docker qemu
+      uses: docker/setup-qemu-action@v3
+      
+    - name: 搭建arm64编译环境
+      run: |
+        docker build -t mesa-build:latest .
+        CONTAINER_ID=$(docker create mesa-build:latest)
+        sudo mkdir -p /tmp/arm64-deps/
+        sudo docker cp $CONTAINER_ID:/usr /tmp/arm64-deps/
+        docker rm $CONTAINER_ID
+        sudo apt install debootstrap perl
+        chmod +x create_bootstraps.sh
+        sudo ./create_bootstraps.sh
+        cd /opt
+        sudo tar -I "xz -T0 -9" -cpf arm64_libs.tar.xz chroots
+        sha256sum *.tar.xz
+        
+    - name: 上传artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: arm64_libs
+        path: /opt/arm64_libs.tar.xz
+        
