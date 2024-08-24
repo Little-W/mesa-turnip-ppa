@@ -4,6 +4,7 @@ cpp = '/usr/bin/aarch64-linux-gnu-g++'
 ar = '/usr/bin/aarch64-linux-gnu-gcc-ar'
 strip = '/usr/bin/aarch64-linux-gnu-strip'
 pkg-config = '/usr/bin/aarch64-linux-gnu-pkg-config'
+llvm-config = '/tmp/arm64-deps/usr/bin/llvm-config-18'
 
 [host_machine]
 system = 'linux'

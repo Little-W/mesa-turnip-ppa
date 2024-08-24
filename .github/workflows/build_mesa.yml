@@ -1,41 +1,58 @@
 name: 构建mesa
 
 on:
+  schedule:
+    - cron:  0 0 1 */2 *
+  push:
   workflow_dispatch:
-    inputs:
-      mesa-version:
-        description: |
-          e.g. mesa-24.1.1  
-          https://gitlab.freedesktop.org/mesa/mesa/-/tags
-        required: true
-        default: 'main'
-        type: string
 
 jobs:
-  linux-arm64:
-    runs-on: ubuntu-24.04
+  build-mesa-aarch64:
+    runs-on: ubuntu-latest
     steps:
     
+    - name: Set Swap Space
+      uses: pierotofy/set-swap-space@master
+      with:
+        swap-size-gb: 10
+        
     - name: 克隆仓库
       uses: actions/checkout@v4
-        
-    - name: 重命名Dockerfile
-      run: mv Dockerfiles/Dockerfile-linux-arm64 Dockerfile
       
-    - name: 下载mesa源码
+    - name: 下载交叉编译环境
+      id: download-artifact
+      uses: dawidd6/action-download-artifact@v2
+      continue-on-error: true
+      with:
+        workflow: create_bootstraps.yml
+        workflow_conclusion: success
+        path: /opt
+        
+    - name: 构建Mesa
       run: |
-        wget https://gitlab.freedesktop.org/mesa/mesa/-/archive/${{ inputs.mesa-version }}/mesa-${{ inputs.mesa-version }}.tar.gz
-        tar xf mesa-${{ inputs.mesa-version }}.tar.gz
-        mv mesa-${{ inputs.mesa-version }} mesa
-        
-    - name: 使用action设置docker qemu #（不需要自己手动放qemu了）
-      uses: docker/setup-qemu-action@v3
-      
-    - name: docker开始构建
-      run: docker build --output type=tar,dest=mesa-build.tar --target=out-image .
+        sudo apt update
+        sudo apt install debootstrap perl git wget xz-utils bubblewrap autoconf qemu-user-binfmt
+        sudo tar -C /opt -xpf /opt/arm64_libs/arm64_libs.tar.xz
+        chmod +x ./build_mesa_cross.sh
+        ./build_mesa_cross.sh
         
     - name: 上传artifact
       uses: actions/upload-artifact@v4.3.3
       with:
-        name: turnip-linux-arm64-${{ inputs.mesa-version }}
-        path: mesa-build.tar
+        name: mesa-24.2-arm64-local-deb
+        path: |
+          /tmp/upload/*local*.deb
+        
+    - name: 上传artifact
+      uses: actions/upload-artifact@v4.3.3
+      with:
+        name: mesa-24.2-arm64-root-deb
+        path: |
+          /tmp/upload/*root*.deb
+          
+    - name: 上传artifact
+      uses: actions/upload-artifact@v4.3.3
+      with:
+        name: mesa-24.2-arm64-tgz
+        path: |
+          /tmp/upload/*gz
