@@ -6,5 +6,9 @@ RUN sed -i 's/Types: deb/Types:deb deb-src/g' /etc/apt/sources.list.d/ubuntu.sou
 && apt update \
 && apt upgrade -y \
 && apt build-dep -y mesa \
+&& apt remove -y llvm-17 llvm-17-dev llvm-17-tools \
+&& apt autoremove -y \
 && apt install -y libclang-18-dev libclang-common-18-dev libclang-cpp18-dev libclc-18 libclc-18-dev libllvmspirvlib-18-dev llvm-spirv-18 libpolly-18-dev llvm-18* \
-&& apt install -y libssl-dev liblz4-dev liburing2
+&& apt install -y libssl-dev liblz4-dev liburing2 \
+&& apt autoremove -y \
+&& apt autoclean -y

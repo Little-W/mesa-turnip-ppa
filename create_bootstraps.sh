@@ -128,22 +128,76 @@ fi'
 cd /usr/lib
 ln -s ./aarch64-linux-gnu/ld-linux-aarch64.so.1 ./
 
-apt install -y qemu-user-binfmt
+apt install -y qemu-user-binfmt cmake
 
 # 安装mesa构建依赖和基本工具
 apt build-dep -y mesa
-apt install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu
 
-# 安装gcc/g++-14 交叉编译器
-apt install -y gcc-14-aarch64-linux-gnu g++-14-aarch64-linux-gnu
+# 安装 GCC 14 交叉编译器 (AArch64)
+apt install -y gcc-14-aarch64-linux-gnu g++-14-aarch64-linux-gnu binutils-aarch64-linux-gnu
 
-# 设置gcc/g++-14为默认
+# 设置 AArch64 GCC 14 为默认
 update-alternatives --install /usr/bin/aarch64-linux-gnu-gcc aarch64-linux-gnu-gcc /usr/bin/aarch64-linux-gnu-gcc-14 100
 update-alternatives --install /usr/bin/aarch64-linux-gnu-g++ aarch64-linux-gnu-g++ /usr/bin/aarch64-linux-gnu-g++-14 100
+update-alternatives --install /usr/bin/aarch64-linux-gnu-gcc-ar aarch64-linux-gnu-gcc-ar /usr/bin/aarch64-linux-gnu-gcc-ar-14 100
+update-alternatives --install /usr/bin/aarch64-linux-gnu-gcc-nm aarch64-linux-gnu-gcc-nm /usr/bin/aarch64-linux-gnu-gcc-nm-14 100
+update-alternatives --install /usr/bin/aarch64-linux-gnu-gcc-ranlib aarch64-linux-gnu-gcc-ranlib /usr/bin/aarch64-linux-gnu-gcc-ranlib-14 100
 
-# 确保设置后的编译器是14版本
 update-alternatives --set aarch64-linux-gnu-gcc /usr/bin/aarch64-linux-gnu-gcc-14
 update-alternatives --set aarch64-linux-gnu-g++ /usr/bin/aarch64-linux-gnu-g++-14
+update-alternatives --set aarch64-linux-gnu-gcc-ar /usr/bin/aarch64-linux-gnu-gcc-ar-14
+update-alternatives --set aarch64-linux-gnu-gcc-nm /usr/bin/aarch64-linux-gnu-gcc-nm-14
+update-alternatives --set aarch64-linux-gnu-gcc-ranlib /usr/bin/aarch64-linux-gnu-gcc-ranlib-14
+
+# 安装 GCC 14 交叉编译器 (ARMHF)
+apt install -y gcc-14-arm-linux-gnueabihf g++-14-arm-linux-gnueabihf binutils-arm-linux-gnueabihf
+
+# 设置 ARMHF GCC 14 为默认
+update-alternatives --install /usr/bin/arm-linux-gnueabihf-gcc arm-linux-gnueabihf-gcc /usr/bin/arm-linux-gnueabihf-gcc-14 100
+update-alternatives --install /usr/bin/arm-linux-gnueabihf-g++ arm-linux-gnueabihf-g++ /usr/bin/arm-linux-gnueabihf-g++-14 100
+update-alternatives --install /usr/bin/arm-linux-gnueabihf-gcc-ar arm-linux-gnueabihf-gcc-ar /usr/bin/arm-linux-gnueabihf-gcc-ar-14 100
+update-alternatives --install /usr/bin/arm-linux-gnueabihf-gcc-nm arm-linux-gnueabihf-gcc-nm /usr/bin/arm-linux-gnueabihf-gcc-nm-14 100
+update-alternatives --install /usr/bin/arm-linux-gnueabihf-gcc-ranlib arm-linux-gnueabihf-gcc-ranlib /usr/bin/arm-linux-gnueabihf-gcc-ranlib-14 100
+
+update-alternatives --set arm-linux-gnueabihf-gcc /usr/bin/arm-linux-gnueabihf-gcc-14
+update-alternatives --set arm-linux-gnueabihf-g++ /usr/bin/arm-linux-gnueabihf-g++-14
+update-alternatives --set arm-linux-gnueabihf-gcc-ar /usr/bin/arm-linux-gnueabihf-gcc-ar-14
+update-alternatives --set arm-linux-gnueabihf-gcc-nm /usr/bin/arm-linux-gnueabihf-gcc-nm-14
+update-alternatives --set arm-linux-gnueabihf-gcc-ranlib /usr/bin/arm-linux-gnueabihf-gcc-ranlib-14
+
+# 安装 Clang-18、LLD-18 及相关 LLVM 工具
+sudo apt install -y clang-18 lld-18 llvm-18 llvm-18-dev llvm-18-tools libllvm18 libclang-18-dev libclang-common-18-dev libclang1-18 libclang-cpp18
+
+# 设置 Clang-18 为默认的 Clang 版本
+sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-18 100
+sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-18 100
+sudo update-alternatives --install /usr/bin/llvm-config llvm-config /usr/bin/llvm-config-18 100
+
+# 设置 LLD-18 为默认的链接器
+sudo update-alternatives --install /usr/bin/ld.lld ld.lld /usr/bin/lld-18 100
+sudo update-alternatives --install /usr/bin/lld lld /usr/bin/lld-18 100
+
+# 设置其他 LLVM 工具为默认，移除版本号后设置
+sudo update-alternatives --install /usr/bin/llvm-ar llvm-ar /usr/bin/llvm-ar-18 100
+sudo update-alternatives --install /usr/bin/llvm-nm llvm-nm /usr/bin/llvm-nm-18 100
+sudo update-alternatives --install /usr/bin/llvm-strip llvm-strip /usr/bin/llvm-strip-18 100
+sudo update-alternatives --install /usr/bin/llvm-objcopy llvm-objcopy /usr/bin/llvm-objcopy-18 100
+sudo update-alternatives --install /usr/bin/llvm-objdump llvm-objdump /usr/bin/llvm-objdump-18 100
+sudo update-alternatives --install /usr/bin/llvm-readelf llvm-readelf /usr/bin/llvm-readelf-18 100
+sudo update-alternatives --install /usr/bin/llvm-ranlib llvm-ranlib /usr/bin/llvm-ranlib-18 100
+
+sudo update-alternatives --set clang /usr/bin/clang-18
+sudo update-alternatives --set clang++ /usr/bin/clang++-18
+sudo update-alternatives --set llvm-config /usr/bin/llvm-config-18
+sudo update-alternatives --set ld.lld /usr/bin/lld-18
+sudo update-alternatives --set lld /usr/bin/lld-18
+sudo update-alternatives --set llvm-ar /usr/bin/llvm-ar-18
+sudo update-alternatives --set llvm-nm /usr/bin/llvm-nm-18
+sudo update-alternatives --set llvm-strip /usr/bin/llvm-strip-18
+sudo update-alternatives --set llvm-objcopy /usr/bin/llvm-objcopy-18
+sudo update-alternatives --set llvm-objdump /usr/bin/llvm-objdump-18
+sudo update-alternatives --set llvm-readelf /usr/bin/llvm-readelf-18
+sudo update-alternatives --set llvm-ranlib /usr/bin/llvm-ranlib-18
 
 echo "库目录展示"
 ls -l /usr/lib/aarch64-linux-gnu/
