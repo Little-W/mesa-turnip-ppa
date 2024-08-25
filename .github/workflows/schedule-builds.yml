@@ -1,0 +1,32 @@
+name: Schedule Mesa Builds
+
+on:
+  schedule:
+    - cron: '0 18 * * *'
+  workflow_dispatch:
+  
+jobs:
+  trigger-workflows:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        branch:
+          - mesa-24.1
+          - mesa-24.2
+          - mesa-main
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Trigger mesa building on ${{ matrix.branch }}
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: build_mesa.yml
+          ref: ${{ matrix.branch }}
+
+      - name: Trigger mesa (archlinux) building on ${{ matrix.branch }}
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: build_mesa_arch.yml
+          ref: ${{ matrix.branch }}

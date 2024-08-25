@@ -2,7 +2,7 @@ name: 构建ARM64交叉编译环境
 
 on:
   schedule:
-    - cron:  0 0 1 */2 *
+    - cron:  0 0 * * 1
   push:
   workflow_dispatch:
 

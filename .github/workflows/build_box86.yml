@@ -2,7 +2,7 @@ name: 构建box86
 
 on:
   schedule:
-    - cron:  0 0 1 */2 *
+    - cron: '0 18 * * *'
   push:
   workflow_dispatch:
 
