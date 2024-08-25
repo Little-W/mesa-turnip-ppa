@@ -94,27 +94,29 @@ libc_version=$(dpkg-query -W -f='${Version}' libc6 | awk -F'-' '{print $1}' | tr
 mkdir -p ${UPLOAD_DIR}/
 
 # 设置 LTO 编译器和 LLVM 链接器标志，启用 big.LITTLE 优化，并配置汇编标志
-CFLAGS="-pipe -O3 -march=armv8.2-a+crc+simd+crypto -mtune=cortex-a76.cortex-a55 -ffast-math"
+CFLAGS64="-pipe -O3 -march=armv8.2-a+crc+simd+crypto -mtune=cortex-a76.cortex-a55 -ffast-math"
+ASMFLAGS64="-pipe -march=armv8.2-a+crc+simd+crypto -mtune=cortex-a76.cortex-a55"
+CFLAGS32="-pipe -O3 -march=armv8.2-a+simd+crypto -mtune=cortex-a76.cortex-a55 -ffast-math"
+ASMFLAGS32="-pipe -march=armv8.2-a+simd+crypto -mtune=cortex-a76.cortex-a55"
 LDFLAGS="-O2"
-ASMFLAGS="-pipe -march=armv8.2-a+crc+simd+crypto -mtune=cortex-a76.cortex-a55"
-
 # 构建和安装 box86 (armv7h)
 cd box86
 mkdir build
 cd build
 
-_bwrap cmake .. -DARM_DYNAREC=ON \
--DCMAKE_BUILD_TYPE=RelWithDebInfo \
+_bwrap cmake .. -DARM64=1 -DARM_DYNAREC=1 -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+-DBAD_SIGNAL=ON -DARM_DYNAREC=ON -DSD845=ON \
 -DCMAKE_C_COMPILER=/usr/bin/arm-linux-gnueabihf-gcc \
 -DCMAKE_CXX_COMPILER=/usr/bin/arm-linux-gnueabihf-g++ \
 -DCMAKE_AR=/usr/bin/arm-linux-gnueabihf-gcc-ar \
+-DCMAKE_NM=/usr/bin/arm-linux-gnueabihf-gcc-nm \
 -DCMAKE_STRIP=/usr/bin/arm-linux-gnueabihf-strip \
 -DCMAKE_SYSTEM_PROCESSOR=armv7-a \
--DCMAKE_C_FLAGS="$CFLAGS" \
--DCMAKE_CXX_FLAGS="$CFLAGS" \
+-DCMAKE_C_FLAGS="$CFLAGS32" \
+-DCMAKE_CXX_FLAGS="$CFLAGS32" \
 -DCMAKE_EXE_LINKER_FLAGS="$LDFLAGS" \
 -DCMAKE_SHARED_LINKER_FLAGS="$LDFLAGS" \
--DCMAKE_ASM_FLAGS="$ASMFLAGS"
+-DCMAKE_ASM_FLAGS="$ASMFLAGS32"
 
 _bwrap make -j8
 
@@ -123,10 +125,10 @@ DESTDIR=${proj_path}/box86_install
 _bwrap make install DESTDIR=${DESTDIR}
 
 # 安装到默认目录（/usr/local）
-_bwrap sudo make install
+_bwrap make install
 
 # 替换临时目录中的二进制文件
-_bwrap sudo cp /usr/local/bin/box86 ${DESTDIR}/usr/local/bin/
+_bwrap cp /usr/local/bin/box86 ${DESTDIR}/usr/local/bin/
 
 # 打包成 .tgz 文件
 cd ${UPLOAD_DIR}
@@ -154,18 +156,19 @@ cd ${proj_path}/env_workspace/box64
 mkdir build
 cd build
 
-_bwrap cmake .. -DARM_DYNAREC=ON \
--DCMAKE_BUILD_TYPE=RelWithDebInfo \
+_bwrap cmake .. -DARM64=1 -DARM_DYNAREC=1 -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+-DBAD_SIGNAL=ON -DARM_DYNAREC=ON -DSD845=ON \
 -DCMAKE_C_COMPILER=/usr/bin/aarch64-linux-gnu-gcc \
 -DCMAKE_CXX_COMPILER=/usr/bin/aarch64-linux-gnu-g++ \
 -DCMAKE_AR=/usr/bin/aarch64-linux-gnu-gcc-ar \
+-DCMAKE_MN=/usr/bin/aarch64-linux-gnu-gcc-mn \
 -DCMAKE_STRIP=/usr/bin/aarch64-linux-gnu-strip \
 -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
--DCMAKE_C_FLAGS="$CFLAGS" \
--DCMAKE_CXX_FLAGS="$CFLAGS" \
+-DCMAKE_C_FLAGS="$CFLAGS64" \
+-DCMAKE_CXX_FLAGS="$CFLAGS64" \
 -DCMAKE_EXE_LINKER_FLAGS="$LDFLAGS" \
 -DCMAKE_SHARED_LINKER_FLAGS="$LDFLAGS" \
--DCMAKE_ASM_FLAGS="$ASMFLAGS"
+-DCMAKE_ASM_FLAGS="$ASMFLAGS64"
 
 _bwrap make -j8
 
@@ -174,10 +177,10 @@ DESTDIR=${proj_path}/box64_install
 _bwrap make install DESTDIR=${DESTDIR}
 
 # 安装到默认目录（/usr/local）
-_bwrap sudo make install
+_bwrap make install
 
 # 替换临时目录中的二进制文件
-_bwrap sudo cp /usr/local/bin/box64 ${DESTDIR}/usr/local/bin/
+_bwrap cp /usr/local/bin/box64 ${DESTDIR}/usr/local/bin/
 
 # 打包成 .tgz 文件
 cd ${UPLOAD_DIR}
