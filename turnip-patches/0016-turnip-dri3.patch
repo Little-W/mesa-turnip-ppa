@@ -1,8 +1,8 @@
 diff --git a/src/freedreno/vulkan/tu_shader.cc b/src/freedreno/vulkan/tu_shader.cc
-index 473d2bc..d9fefbf 100644
+index 8f178bf..397c3cd 100644
 --- a/src/freedreno/vulkan/tu_shader.cc
 +++ b/src/freedreno/vulkan/tu_shader.cc
-@@ -2123,10 +2123,10 @@ tu_upload_shader(struct tu_device *dev,
+@@ -2110,10 +2110,10 @@ tu_upload_shader(struct tu_device *dev,
        size += vpc_size;
     }
  
@@ -15,7 +15,7 @@ index 473d2bc..d9fefbf 100644
  
     if (result != VK_SUCCESS)
        return result;
-@@ -2156,9 +2156,9 @@ tu_upload_shader(struct tu_device *dev,
+@@ -2143,9 +2143,9 @@ tu_upload_shader(struct tu_device *dev,
  
     result = tu_setup_pvtmem(dev, shader, &pvtmem_config, pvtmem_size, per_wave);
     if (result != VK_SUCCESS) {
@@ -27,7 +27,7 @@ index 473d2bc..d9fefbf 100644
        return result;
     }
  
-@@ -2852,10 +2852,10 @@ tu_empty_shader_create(struct tu_device *dev,
+@@ -2839,10 +2839,10 @@ tu_empty_shader_create(struct tu_device *dev,
     if (!shader)
        return VK_ERROR_OUT_OF_HOST_MEMORY;
  
@@ -40,7 +40,7 @@ index 473d2bc..d9fefbf 100644
  
     if (result != VK_SUCCESS) {
        vk_free(&dev->vk.alloc, shader);
-@@ -2967,9 +2967,9 @@ tu_shader_destroy(struct tu_device *dev,
+@@ -2954,9 +2954,9 @@ tu_shader_destroy(struct tu_device *dev,
     tu_cs_finish(&shader->cs);
     TU_RMV(resource_destroy, dev, &shader->bo);
  
@@ -228,7 +228,7 @@ index 9835f8f..ba73f67 100644
  
  static VkResult
 diff --git a/src/vulkan/wsi/wsi_common_x11.c b/src/vulkan/wsi/wsi_common_x11.c
-index 0c0c489..41eb565 100644
+index 0c0c489..153eac8 100644
 --- a/src/vulkan/wsi/wsi_common_x11.c
 +++ b/src/vulkan/wsi/wsi_common_x11.c
 @@ -149,22 +149,7 @@ static bool
@@ -273,7 +273,15 @@ index 0c0c489..41eb565 100644
  
     return result;
  }
-@@ -2139,15 +2120,24 @@ x11_image_init(VkDevice device_h, struct x11_swapchain *chain,
+@@ -2059,7 +2040,6 @@ x11_image_init(VkDevice device_h, struct x11_swapchain *chain,
+    xcb_generic_error_t *error = NULL;
+    VkResult result;
+    uint32_t bpp = 32;
+-   int fence_fd;
+ 
+    result = wsi_create_image(&chain->base, &chain->base.image_info,
+                              &image->base);
+@@ -2139,15 +2119,24 @@ x11_image_init(VkDevice device_h, struct x11_swapchain *chain,
        if (fd == -1)
           return VK_ERROR_OUT_OF_HOST_MEMORY;
  
@@ -307,17 +315,45 @@ index 0c0c489..41eb565 100644
     }
  
     error = xcb_request_check(chain->conn, cookie);
-@@ -2177,6 +2167,9 @@ x11_image_init(VkDevice device_h, struct x11_swapchain *chain,
+@@ -2177,33 +2166,17 @@ x11_image_init(VkDevice device_h, struct x11_swapchain *chain,
     }
  #endif
  
+-out_fence:
+-   fence_fd = xshmfence_alloc_shm();
+-   if (fence_fd < 0)
+-      goto fail_pixmap;
 +   image->sync_fence = 0;
 +   return VK_SUCCESS;
-+
- out_fence:
-    fence_fd = xshmfence_alloc_shm();
-    if (fence_fd < 0)
-@@ -2218,10 +2211,6 @@ x11_image_finish(struct x11_swapchain *chain,
+ 
+-   image->shm_fence = xshmfence_map_shm(fence_fd);
+-   if (image->shm_fence == NULL)
+-      goto fail_shmfence_alloc;
++out_fence:
+ 
+    image->sync_fence = xcb_generate_id(chain->conn);
+-   xcb_dri3_fence_from_fd(chain->conn,
+-                          image->pixmap,
+-                          image->sync_fence,
+-                          false,
+-                          fence_fd);
+-
++   
+    xshmfence_trigger(image->shm_fence);
+ 
+    return VK_SUCCESS;
+ 
+-fail_shmfence_alloc:
+-   close(fence_fd);
+-
+-fail_pixmap:
+-   cookie = xcb_free_pixmap(chain->conn, image->pixmap);
+-   xcb_discard_reply(chain->conn, cookie.sequence);
+-
+ fail_image:
+    wsi_destroy_image(&chain->base, &image->base);
+ 
+@@ -2218,10 +2191,6 @@ x11_image_finish(struct x11_swapchain *chain,
     xcb_void_cookie_t cookie;
  
     if (!chain->base.wsi->sw || chain->has_mit_shm) {
