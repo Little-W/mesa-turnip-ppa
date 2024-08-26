@@ -1,4 +1,4 @@
-name: 构建mesa
+name: 构建mesa (ArchLinux)
 
 on:
   schedule:
@@ -35,9 +35,11 @@ jobs:
         
     - name: 下载并处理Mesa源码
       run: |
+        echo "ARCHLINUX=1" >> $GITHUB_ENV
+        echo "SUFFIX=-arch" >> $GITHUB_ENV
+        
         processed_ref=${{ github.ref }}
         processed_ref=$(echo "$processed_ref" | sed 's|refs/heads/||')
-        
         dot_count=$(awk -F"." '{print NF-1}' <<< "${processed_ref}")
         
         if [[ $dot_count -eq 2 ]]; then
