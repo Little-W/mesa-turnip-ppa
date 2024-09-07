@@ -114,7 +114,8 @@ export CPPFLAGS="-D_FORTIFY_SOURCE=0"
 
 export CFLAGS_BASE="-O3 -march=armv8.2-a+crc+simd+crypto -mtune=cortex-a77 -fno-math-errno -fno-trapping-math -funroll-loops -fno-semantic-interposition -fcf-protection=none -mharden-sls=none -fomit-frame-pointer"
 
-export CFLAGS_LLVM="-Wno-typedef-redefinition -mllvm -extra-vectorizer-passes -mllvm -enable-cond-stores-vec -mllvm -enable-loop-distribute -mllvm -enable-unroll-and-jam -mllvm -enable-loop-flatten -mllvm -interleave-small-loop-scalar-reduction -mllvm -unroll-runtime-multi-exit -mllvm -aggressive-ext-opt -mllvm -polly -mllvm -polly-ast-use-context -mllvm -polly-invariant-load-hoisting -mllvm -polly-run-inliner -mllvm -polly-vectorizer=stripmine -mllvm -polly-loopfusion-greedy=1 -mllvm -polly-reschedule=1 -mllvm -polly-postopts=1"
+
+export CFLAGS_LLVM="-Wno-typedef-redefinition -mllvm -extra-vectorizer-passes -mllvm -enable-cond-stores-vec -mllvm -enable-loop-distribute -mllvm -enable-unroll-and-jam -mllvm -enable-loop-flatten -mllvm -interleave-small-loop-scalar-reduction"
 
 export LDFLAGS_BASE="-O3"
 
