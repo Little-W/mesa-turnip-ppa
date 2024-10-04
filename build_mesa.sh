@@ -53,8 +53,17 @@ done
 # 清理 /usr/local
 sudo rm -rf /usr/local/*
 
+export CFLAGS_BASE="-O3 -march=armv8.2-a+crc+simd+crypto -mtune=cortex-a76.cortex-a55 -fno-math-errno -fno-trapping-math -funroll-loops -fno-semantic-interposition -fcf-protection=none -mharden-sls=none -fomit-frame-pointer"
+
+export LDFLAGS="-O3"
+
+export CFLAGS="${CFLAGS_BASE}"
+export CXXFLAGS="${CFLAGS}"
+export CCLDFLAGS="${LDFLAGS}"
+export CXXLDFLAGS="${LDFLAGS}"
+
 # 编译 64 位 turnip + zink + 解码库 + 镓九
-meson b -Dgallium-drivers=virgl,zink,llvmpipe,freedreno,d3d12 -Dvulkan-drivers=freedreno -Dglx=dri -Dplatforms=x11,wayland -Dbuildtype=release -Dllvm=enabled -Dxlib-lease=enabled -Dimagination-srv=true -Dvulkan-layers=device-select -Dgles2=enabled -Degl=enabled -Dgallium-nine=true -Dgallium-opencl=icd -Degl=enabled -Dfreedreno-kmds=kgsl,msm -Ddri3=enabled -Dgbm=enabled -Dvulkan-beta=true -Dvideo-codecs=all -Dglx-direct=true -Dtools=drm-shim,freedreno -Dgallium-vdpau=enabled -Dopengl=true -Dosmesa=true -Dpower8=enabled -Degl-native-platform=x11 -Dglvnd=enabled -Db_lto=true -Dcpp_args="-Wno-typedef-redefinition -O3 -march=armv8.2-a+crc+simd+crypto -mtune=cortex-a76.cortex-a55" -Dc_args="-Wno-typedef-redefinition -O3 -march=armv8.2-a+crc+simd+crypto -mtune=cortex-a76.cortex-a55"
+meson b -Dgallium-drivers=virgl,zink,llvmpipe,freedreno,d3d12 -Dvulkan-drivers=freedreno -Dglx=dri -Dplatforms=x11,wayland -Dbuildtype=release -Dllvm=enabled -Dxlib-lease=enabled -Dimagination-srv=true -Dvulkan-layers=device-select -Dgles2=enabled -Degl=enabled -Dgallium-nine=true -Dgallium-opencl=icd -Degl=enabled -Dfreedreno-kmds=kgsl,msm -Ddri3=enabled -Dgbm=enabled -Dvulkan-beta=true -Dvideo-codecs=all -Dglx-direct=true -Dtools=drm-shim,freedreno -Dgallium-vdpau=enabled -Dopengl=true -Dosmesa=true -Dpower8=enabled -Degl-native-platform=x11 -Dglvnd=enabled -Db_lto=true -Dcpp_args="${CXXFLAGS} -Wno-narrowing" -Dc_args="${CFLAGS} -Wno-narrowing -Wno-incompatible-pointer-types"
 
 cd b
 ninja
@@ -62,8 +71,8 @@ sudo ninja install
 
 # 打包为 .tgz 文件，保留 /usr/local 目录结构
 cd ${home_path}
-tar -czf ${home_path}/upload/mesa-${mesa_version}-${commit_short}-64-lto.tgz -C / usr/local
+tar -czf ${home_path}/upload/mesa-${mesa_version}-${commit_short}-lto.tgz -C / usr/local
 
 # 打包 LTO 版本的 .deb 包
-create_deb_package "${home_path}/mesa_deb_lto_root-64" "mesa-adreno-lto-root-64" "/"
-create_deb_package "${home_path}/mesa_deb_lto_local-64" "mesa-adreno-lto-local-64" "/usr/local"
+create_deb_package "${home_path}/mesa_deb_lto_root" "mesa-adreno-lto-root" "/"
+create_deb_package "${home_path}/mesa_deb_lto_local" "mesa-adreno-lto-local" "/usr/local"
