@@ -14,7 +14,7 @@ if [ "${ARCHLINUX}" = "1" ]; then
     LIBDIR=" --libdir=lib"
     SUFFIX="-arch"
 else
-    LIBDIR=''
+    LIBDIR=" --libdir=lib/aarch64-linux-gnu"
     SUFFIX=''
 fi
 

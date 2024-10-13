@@ -35,6 +35,7 @@ jobs:
         
     - name: 下载并处理Mesa源码
       run: |
+        echo "ARCHLINUX=0" >> $GITHUB_ENV
         processed_ref=${{ github.ref }}
         processed_ref=$(echo "$processed_ref" | sed 's|refs/heads/||')
         
