@@ -6,7 +6,7 @@ index 425c8378c05..1146ee4f538 100644
  
  #endif /* DETECT_OS_DRAGONFLY || DETECT_OS_FREEBSD */
  
-+#ifdef __TERMUX__
++#ifdef __linux__
 +#undef SYS_kcmp
 +#endif
 +
